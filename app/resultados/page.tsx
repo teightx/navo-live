@@ -118,9 +118,10 @@ function ResultsContent() {
 
   function handleSearch(state: SearchState) {
     // Normalize and serialize to URL
+    // Usa replace para não adicionar entrada no histórico ao editar
     const normalizedState = normalizeSearchState(state);
     const queryString = serializeSearchState(normalizedState);
-    router.push(`/resultados?${queryString}`);
+    router.replace(`/resultados?${queryString}`);
   }
 
   function handleFlightClick(flight: FlightResult) {

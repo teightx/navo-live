@@ -1,26 +1,17 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Segment } from "./Segment";
 import { SwapButton } from "./SwapButton";
 import { TripTypeSelect } from "./TripTypeSelect";
-import { AirportPopover } from "./AirportPopover";
-import { DatePopover } from "./DatePopover";
+import { AirportField } from "./AirportField";
+import { DateField } from "./DateField";
 import { PaxClassPopover } from "./PaxClassPopover";
 import type { SearchState, TripType, Pax, CabinClass } from "@/lib/types/search";
 import { defaultSearchState } from "@/lib/types/search";
 import { cabinClassLabels } from "@/lib/mocks/searchConfig";
 import type { Airport } from "@/lib/mocks/airports";
-
-type ActivePopover = "from" | "to" | "dates" | "pax" | null;
-type DateFocus = "depart" | "return";
-
-function formatDate(date: string | null): string {
-  if (!date) return "";
-  const [year, month, day] = date.split("-");
-  return `${day}/${month}`;
-}
 
 function formatPaxSummary(pax: Pax, cabin: CabinClass): string {
   const parts: string[] = [];
@@ -45,16 +36,7 @@ function formatPaxSummary(pax: Pax, cabin: CabinClass): string {
 export function SearchBar() {
   const router = useRouter();
   const [state, setState] = useState<SearchState>(defaultSearchState);
-  const [activePopover, setActivePopover] = useState<ActivePopover>(null);
-  const [dateFocus, setDateFocus] = useState<DateFocus>("depart");
-
-  const togglePopover = useCallback((popover: ActivePopover) => {
-    setActivePopover((current) => (current === popover ? null : popover));
-  }, []);
-
-  const closePopover = useCallback(() => {
-    setActivePopover(null);
-  }, []);
+  const [paxOpen, setPaxOpen] = useState(false);
 
   // Handlers
   function handleTripTypeChange(tripType: TripType) {
@@ -65,11 +47,11 @@ export function SearchBar() {
     }));
   }
 
-  function handleFromSelect(airport: Airport) {
+  function handleFromChange(airport: Airport) {
     setState((s) => ({ ...s, from: airport }));
   }
 
-  function handleToSelect(airport: Airport) {
+  function handleToChange(airport: Airport) {
     setState((s) => ({ ...s, to: airport }));
   }
 
@@ -83,11 +65,6 @@ export function SearchBar() {
 
   function handlePaxApply(pax: Pax, cabin: CabinClass) {
     setState((s) => ({ ...s, pax, cabinClass: cabin }));
-  }
-
-  function openDatePopover(focus: DateFocus) {
-    setDateFocus(focus);
-    setActivePopover("dates");
   }
 
   // Validação
@@ -121,79 +98,53 @@ export function SearchBar() {
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      <div className="bg-cream-soft/90 backdrop-blur-sm border border-cream-dark rounded-2xl p-4 sm:p-5">
+      <div className="bg-cream-soft/95 backdrop-blur-sm border border-cream-dark/50 rounded-2xl p-5 sm:p-6 shadow-sm shadow-ink/5">
         {/* Linha 1: Origem + Swap + Destino + Ida + Volta */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
           {/* Origem */}
-          <div className="flex-1 relative">
-            <Segment
-              label="de"
-              value={state.from ? `${state.from.city.toLowerCase()} (${state.from.code.toLowerCase()})` : ""}
-              placeholder="origem"
-              onClick={() => togglePopover("from")}
-              isActive={activePopover === "from"}
-            >
-              <AirportPopover
-                isOpen={activePopover === "from"}
-                onClose={closePopover}
-                onSelect={handleFromSelect}
-                exclude={state.to?.code}
-              />
-            </Segment>
-          </div>
+          <AirportField
+            label="de"
+            value={state.from}
+            onChange={handleFromChange}
+            exclude={state.to?.code}
+            placeholder="origem"
+          />
 
           {/* Botão Swap */}
-          <div className="hidden sm:flex items-center justify-center">
+          <div className="hidden sm:flex items-center justify-center flex-shrink-0">
             <SwapButton onClick={handleSwap} />
           </div>
 
           {/* Destino */}
-          <div className="flex-1 relative">
-            <Segment
-              label="para"
-              value={state.to ? `${state.to.city.toLowerCase()} (${state.to.code.toLowerCase()})` : ""}
-              placeholder="destino"
-              onClick={() => togglePopover("to")}
-              isActive={activePopover === "to"}
-            >
-              <AirportPopover
-                isOpen={activePopover === "to"}
-                onClose={closePopover}
-                onSelect={handleToSelect}
-                exclude={state.from?.code}
-              />
-            </Segment>
-          </div>
+          <AirportField
+            label="para"
+            value={state.to}
+            onChange={handleToChange}
+            exclude={state.from?.code}
+            placeholder="destino"
+          />
 
           {/* Ida */}
-          <div className="relative sm:w-[120px]">
-            <Segment
+          <div className="sm:w-[130px] flex-shrink-0">
+            <DateField
               label="ida"
-              value={formatDate(state.departDate)}
-              placeholder="data"
-              onClick={() => openDatePopover("depart")}
-              isActive={activePopover === "dates" && dateFocus === "depart"}
-            >
-              <DatePopover
-                isOpen={activePopover === "dates"}
-                onClose={closePopover}
-                tripType={state.tripType}
-                departDate={state.departDate}
-                returnDate={state.returnDate}
-                onApply={handleDatesApply}
-                focusField={dateFocus}
-              />
-            </Segment>
+              departDate={state.departDate}
+              returnDate={state.returnDate}
+              onApply={handleDatesApply}
+              isRoundtrip={state.tripType === "roundtrip"}
+              focusField="depart"
+            />
           </div>
 
           {/* Volta */}
-          <div className="relative sm:w-[120px]">
-            <Segment
+          <div className="sm:w-[130px] flex-shrink-0">
+            <DateField
               label="volta"
-              value={state.tripType === "roundtrip" ? formatDate(state.returnDate) : ""}
-              placeholder={state.tripType === "roundtrip" ? "data" : "—"}
-              onClick={() => openDatePopover("return")}
-              isActive={activePopover === "dates" && dateFocus === "return"}
+              departDate={state.departDate}
+              returnDate={state.returnDate}
+              onApply={handleDatesApply}
+              isRoundtrip={state.tripType === "roundtrip"}
+              focusField="return"
               disabled={state.tripType === "oneway"}
             />
           </div>
@@ -208,16 +159,17 @@ export function SearchBar() {
           />
 
           {/* Viajantes e classe */}
-          <div className="relative flex-1 sm:max-w-[280px]">
+          <div className="relative flex-1 sm:max-w-[300px]">
             <Segment
               label="viajantes"
               value={formatPaxSummary(state.pax, state.cabinClass)}
-              onClick={() => togglePopover("pax")}
-              isActive={activePopover === "pax"}
+              onClick={() => setPaxOpen(true)}
+              isActive={paxOpen}
+              filled
             >
               <PaxClassPopover
-                isOpen={activePopover === "pax"}
-                onClose={closePopover}
+                isOpen={paxOpen}
+                onClose={() => setPaxOpen(false)}
                 pax={state.pax}
                 cabinClass={state.cabinClass}
                 onApply={handlePaxApply}
@@ -234,12 +186,12 @@ export function SearchBar() {
             onClick={handleSubmit}
             disabled={!isValid}
             className={`
-              h-12 px-8 rounded-full
+              h-12 px-10 rounded-full
               text-sm font-medium lowercase
-              transition-colors duration-150
+              transition-all duration-150
               ${isValid
-                ? "bg-blue text-cream-soft hover:bg-blue-soft cursor-pointer"
-                : "bg-cream-dark text-ink-muted cursor-not-allowed"
+                ? "bg-blue text-cream-soft hover:bg-blue-soft shadow-sm shadow-blue/20 cursor-pointer"
+                : "bg-cream-dark/80 text-ink-muted cursor-not-allowed"
               }
             `}
           >

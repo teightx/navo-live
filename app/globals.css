@@ -25,6 +25,18 @@
   --color-accent-soft: #e99a6a;
 
   --font-sans: "DM Sans", system-ui, -apple-system, sans-serif;
+
+  /* Animação das ondas */
+  --animate-waves: waves 20s ease-in-out infinite;
+}
+
+@keyframes waves {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
 }
 
 html {

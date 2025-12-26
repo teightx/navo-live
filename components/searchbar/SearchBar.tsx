@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { SwapButton } from "./SwapButton";
 import { AirportField } from "./AirportField";
@@ -32,13 +32,26 @@ function formatPaxSummary(pax: Pax, cabin: CabinClass): string {
 }
 
 // Ícones SVG
-function PlaneTakeoffIcon({ className = "" }: { className?: string }) {
+export function PlaneDepartIcon({ className = "" }: { className?: string }) {
   return (
-    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <svg className={className} width="16" height="16" viewBox="0 0 16 16" fill="none">
       <path 
-        d="M2.5 19H21.5M4.5 17L3 11L5 11.5L7 8L10 9L13.5 3L15.5 4L14 10L17 11L20 9L21 11L16 15L4.5 17Z" 
+        d="M1.5 13H14.5" 
         stroke="currentColor" 
-        strokeWidth="1.5" 
+        strokeWidth="1.2" 
+        strokeLinecap="round"
+      />
+      <path 
+        d="M13.5 7.5L12 8.5L9 7L6.5 8L3.5 6.5L2 7.5L4.5 9.5L8 10L11 9L13.5 7.5Z" 
+        stroke="currentColor" 
+        strokeWidth="1.2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+      />
+      <path 
+        d="M9.5 3L11.5 5.5L9 7" 
+        stroke="currentColor" 
+        strokeWidth="1.2" 
         strokeLinecap="round" 
         strokeLinejoin="round"
       />
@@ -46,7 +59,7 @@ function PlaneTakeoffIcon({ className = "" }: { className?: string }) {
   );
 }
 
-function MapPinIcon({ className = "" }: { className?: string }) {
+export function MapPinIcon({ className = "" }: { className?: string }) {
   return (
     <svg className={className} width="16" height="16" viewBox="0 0 16 16" fill="none">
       <path 
@@ -63,7 +76,7 @@ function MapPinIcon({ className = "" }: { className?: string }) {
   );
 }
 
-function CalendarIcon({ className = "" }: { className?: string }) {
+export function CalendarIcon({ className = "" }: { className?: string }) {
   return (
     <svg className={className} width="16" height="16" viewBox="0 0 16 16" fill="none">
       <rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" strokeWidth="1.2"/>
@@ -74,7 +87,7 @@ function CalendarIcon({ className = "" }: { className?: string }) {
   );
 }
 
-function UsersIcon({ className = "" }: { className?: string }) {
+export function UsersIcon({ className = "" }: { className?: string }) {
   return (
     <svg className={className} width="16" height="16" viewBox="0 0 16 16" fill="none">
       <circle cx="6" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.2"/>
@@ -93,9 +106,22 @@ function ChevronDownIcon({ className = "" }: { className?: string }) {
   );
 }
 
-export function SearchBar() {
+interface SearchBarProps {
+  initialState?: Partial<SearchState>;
+  onSearch?: (state: SearchState) => void;
+  mode?: "default" | "compact";
+}
+
+export function SearchBar({ initialState, onSearch, mode = "default" }: SearchBarProps) {
   const router = useRouter();
-  const [state, setState] = useState<SearchState>(defaultSearchState);
+  
+  // Cria estado inicial mesclado com useMemo para evitar recriação
+  const mergedInitialState = useMemo(() => ({
+    ...defaultSearchState,
+    ...initialState,
+  }), [initialState]);
+
+  const [state, setState] = useState<SearchState>(mergedInitialState);
   const [paxOpen, setPaxOpen] = useState(false);
 
   // Handlers
@@ -138,6 +164,11 @@ export function SearchBar() {
   // Submit
   function handleSubmit() {
     if (!isValid) return;
+
+    if (onSearch) {
+      onSearch(state);
+      return;
+    }
 
     const params = new URLSearchParams({
       from: state.from!.code,
@@ -196,7 +227,7 @@ export function SearchBar() {
           <div className="flex-1">
             <AirportField
               label="de"
-              icon={<PlaneTakeoffIcon className="text-ink-muted" />}
+              icon={<PlaneDepartIcon className="text-ink-muted" />}
               value={state.from}
               onChange={handleFromChange}
               exclude={state.to?.code}
@@ -295,7 +326,7 @@ export function SearchBar() {
               }
             `}
           >
-            buscar
+            {mode === "compact" ? "aplicar" : "buscar"}
           </button>
         </div>
       </div>

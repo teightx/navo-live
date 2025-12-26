@@ -1,48 +1,37 @@
 @import "tailwindcss";
 
 @theme inline {
-  /* Fundo */
   --color-cream: #fcf2ed;
   --color-cream-dark: #f0e4dd;
   --color-cream-soft: #fff8f5;
 
-  /* Texto */
   --color-ink: #3a3a3a;
   --color-ink-soft: #5a5a5a;
   --color-ink-muted: #8a8a8a;
 
-  /* Azuis */
   --color-blue: #4f7386;
   --color-blue-soft: #7fa6b3;
   --color-blue-muted: #a8c4cf;
 
-  /* Verde */
   --color-sage: #9fb48a;
   --color-sage-soft: #b5c9a3;
 
-  /* Laranja */
   --color-accent: #e07a3f;
   --color-accent-soft: #e99a6a;
 
   --font-sans: "DM Sans", system-ui, -apple-system, sans-serif;
-
-  /* Animação das ondas - mais perceptível */
-  --animate-waves: waves 12s ease-in-out infinite;
 }
 
-@keyframes waves {
-  0%, 100% {
-    transform: translateY(0) scale(1);
-  }
-  25% {
-    transform: translateY(-25px) scale(1.01);
-  }
-  50% {
-    transform: translateY(-40px) scale(1.02);
-  }
-  75% {
-    transform: translateY(-20px) scale(1.01);
-  }
+@keyframes wavesBack {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-25px); }
+}
+
+@keyframes wavesFront {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-15px); }
+  50% { transform: translateY(-35px); }
+  75% { transform: translateY(-20px); }
 }
 
 html {
@@ -61,4 +50,12 @@ body {
 ::selection {
   background: var(--color-blue-soft);
   color: var(--color-cream);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

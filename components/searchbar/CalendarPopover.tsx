@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Popover } from "./Popover";
+import { useI18n } from "@/lib/i18n";
 
 interface CalendarPopoverProps {
   isOpen: boolean;
@@ -13,10 +14,16 @@ interface CalendarPopoverProps {
   focusField: "depart" | "return";
 }
 
-const WEEKDAYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
-const MONTHS = [
+const WEEKDAYS_PT = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+const WEEKDAYS_EN = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+const MONTHS_PT = [
   "janeiro", "fevereiro", "março", "abril", "maio", "junho",
   "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
+];
+const MONTHS_EN = [
+  "january", "february", "march", "april", "may", "june",
+  "july", "august", "september", "october", "november", "december"
 ];
 
 function parseDate(dateStr: string): Date {
@@ -53,6 +60,10 @@ export function CalendarPopover({
   isRoundtrip,
   focusField,
 }: CalendarPopoverProps) {
+  const { locale } = useI18n();
+  const weekdays = locale === "pt-BR" ? WEEKDAYS_PT : WEEKDAYS_EN;
+  const months = locale === "pt-BR" ? MONTHS_PT : MONTHS_EN;
+
   const today = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -69,7 +80,6 @@ export function CalendarPopover({
     return today;
   });
 
-  // Sincroniza quando abre
   useEffect(() => {
     if (isOpen) {
       if (focusField === "return" && returnDate) {
@@ -82,7 +92,6 @@ export function CalendarPopover({
     }
   }, [isOpen, departDate, returnDate, focusField, today]);
 
-  // Gera dias do mês atual
   const calendarDays = useMemo(() => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
@@ -110,12 +119,9 @@ export function CalendarPopover({
     const dateISO = formatToISO(date);
 
     if (!isRoundtrip) {
-      // Só ida - aplica e fecha
       onApply(dateISO, null);
       onClose();
     } else if (focusField === "depart") {
-      // Selecionando ida
-      // Se a data selecionada é depois da volta, limpa volta
       if (returnDate && date >= parseDate(returnDate)) {
         onApply(dateISO, null);
       } else {
@@ -123,9 +129,7 @@ export function CalendarPopover({
       }
       onClose();
     } else {
-      // Selecionando volta
       if (departDate && date <= parseDate(departDate)) {
-        // Se clicou antes ou igual à ida, não faz nada
         return;
       }
       onApply(departDate, dateISO);
@@ -148,9 +152,13 @@ export function CalendarPopover({
   const localDepart = departDate ? parseDate(departDate) : null;
   const localReturn = returnDate ? parseDate(returnDate) : null;
 
+  const instructionText = locale === "pt-BR" 
+    ? (focusField === "depart" ? "selecione a data de ida" : "selecione a data de volta")
+    : (focusField === "depart" ? "select departure date" : "select return date");
+
   return (
     <Popover isOpen={isOpen} onClose={onClose} className="w-[300px] p-4">
-      {/* Header do calendário */}
+      {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <button
           type="button"
@@ -161,7 +169,7 @@ export function CalendarPopover({
             transition-colors duration-100
             ${isPrevDisabled
               ? "text-ink-muted/40 cursor-not-allowed"
-              : "text-ink hover:bg-ink/5"
+              : "text-ink hover:bg-cream-dark/50"
             }
           `}
         >
@@ -171,13 +179,13 @@ export function CalendarPopover({
         </button>
 
         <div className="text-sm font-medium text-ink">
-          {MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+          {months[currentMonth.getMonth()]} {currentMonth.getFullYear()}
         </div>
 
         <button
           type="button"
           onClick={handleNextMonth}
-          className="w-8 h-8 rounded-full flex items-center justify-center text-ink hover:bg-ink/5 transition-colors duration-100"
+          className="w-8 h-8 rounded-full flex items-center justify-center text-ink hover:bg-cream-dark/50 transition-colors duration-100"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -185,9 +193,9 @@ export function CalendarPopover({
         </button>
       </div>
 
-      {/* Dias da semana */}
+      {/* Weekdays */}
       <div className="grid grid-cols-7 gap-1 mb-2">
-        {WEEKDAYS.map((day) => (
+        {weekdays.map((day) => (
           <div
             key={day}
             className="h-8 flex items-center justify-center text-[10px] uppercase tracking-wider text-ink-muted"
@@ -197,7 +205,7 @@ export function CalendarPopover({
         ))}
       </div>
 
-      {/* Grid de dias */}
+      {/* Days grid */}
       <div className="grid grid-cols-7 gap-1">
         {calendarDays.map((date, index) => {
           if (!date) {
@@ -210,8 +218,6 @@ export function CalendarPopover({
           const isSelectedReturn = localReturn && isSameDay(date, localReturn);
           const isSelected = isSelectedDepart || isSelectedReturn;
           const inRange = isInRange(date, localDepart, localReturn);
-
-          // Se estamos selecionando volta e a data é <= ida, desabilita
           const isBeforeDepart = focusField === "return" && localDepart ? date <= localDepart : false;
 
           return (
@@ -230,8 +236,8 @@ export function CalendarPopover({
                     : inRange
                       ? "bg-blue/10 text-ink"
                       : isToday
-                        ? "ring-1 ring-blue/40 text-ink hover:bg-ink/5"
-                        : "text-ink hover:bg-ink/5"
+                        ? "ring-1 ring-blue/40 text-ink hover:bg-cream-dark/50"
+                        : "text-ink hover:bg-cream-dark/50"
                 }
               `}
             >
@@ -241,9 +247,9 @@ export function CalendarPopover({
         })}
       </div>
 
-      {/* Instrução sutil */}
+      {/* Instruction */}
       <div className="mt-3 text-xs text-ink-muted text-center">
-        {focusField === "depart" ? "selecione a data de ida" : "selecione a data de volta"}
+        {instructionText}
       </div>
     </Popover>
   );

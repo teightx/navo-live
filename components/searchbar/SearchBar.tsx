@@ -6,29 +6,30 @@ import { SwapButton } from "./SwapButton";
 import { AirportField } from "./AirportField";
 import { DateField } from "./DateField";
 import { PaxClassPopover } from "./PaxClassPopover";
+import { useI18n } from "@/lib/i18n";
 import type { SearchState, TripType, Pax, CabinClass } from "@/lib/types/search";
 import { defaultSearchState } from "@/lib/types/search";
-import { cabinClassLabels } from "@/lib/mocks/searchConfig";
 import type { Airport } from "@/lib/mocks/airports";
 
-function formatPaxSummary(pax: Pax, cabin: CabinClass): string {
+function formatPaxSummary(pax: Pax, cabin: CabinClass, t: ReturnType<typeof useI18n>["t"]): string {
   const parts: string[] = [];
   
   if (pax.adults === 1 && pax.children === 0 && pax.infants === 0) {
-    parts.push("1 adulto");
+    parts.push(`1 ${t.search.adult}`);
   } else {
     if (pax.adults > 0) {
-      parts.push(`${pax.adults} ${pax.adults === 1 ? "adulto" : "adultos"}`);
+      parts.push(`${pax.adults} ${t.search.adults}`);
     }
     if (pax.children > 0) {
-      parts.push(`${pax.children} ${pax.children === 1 ? "criança" : "crianças"}`);
+      parts.push(`${pax.children} ${t.search.children}`);
     }
     if (pax.infants > 0) {
-      parts.push(`${pax.infants} ${pax.infants === 1 ? "bebê" : "bebês"}`);
+      parts.push(`${pax.infants} ${t.search.infants}`);
     }
   }
   
-  return `${parts.join(", ")}, ${cabinClassLabels[cabin]}`;
+  const cabinLabel = t.search.cabin[cabin as keyof typeof t.search.cabin];
+  return `${parts.join(", ")}, ${cabinLabel}`;
 }
 
 // Ícones SVG
@@ -114,8 +115,8 @@ interface SearchBarProps {
 
 export function SearchBar({ initialState, onSearch, mode = "default" }: SearchBarProps) {
   const router = useRouter();
+  const { t } = useI18n();
   
-  // Cria estado inicial mesclado com useMemo para evitar recriação
   const mergedInitialState = useMemo(() => ({
     ...defaultSearchState,
     ...initialState,
@@ -124,7 +125,6 @@ export function SearchBar({ initialState, onSearch, mode = "default" }: SearchBa
   const [state, setState] = useState<SearchState>(mergedInitialState);
   const [paxOpen, setPaxOpen] = useState(false);
 
-  // Handlers
   function handleTripTypeChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const tripType = e.target.value as TripType;
     setState((s) => ({
@@ -154,14 +154,12 @@ export function SearchBar({ initialState, onSearch, mode = "default" }: SearchBa
     setState((s) => ({ ...s, pax, cabinClass: cabin }));
   }
 
-  // Validação
   const isValid =
     state.from !== null &&
     state.to !== null &&
     state.departDate !== null &&
     (state.tripType === "oneway" || state.returnDate !== null);
 
-  // Submit
   function handleSubmit() {
     if (!isValid) return;
 
@@ -189,49 +187,43 @@ export function SearchBar({ initialState, onSearch, mode = "default" }: SearchBa
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      {/* Seletor de tipo de voo - acima do card, alinhado à esquerda */}
+    <div className="w-full max-w-4xl mx-auto px-4 sm:px-0">
+      {/* Trip type selector */}
       <div className="mb-3 pl-1">
         <div className="relative inline-flex items-center">
           <select
             value={state.tripType}
             onChange={handleTripTypeChange}
-            className="
-              appearance-none bg-transparent
-              text-sm text-ink-soft
-              pr-5 cursor-pointer
-              focus:outline-none
-              hover:text-ink transition-colors
-            "
+            className="appearance-none bg-transparent text-sm text-ink-soft pr-5 cursor-pointer focus:outline-none hover:text-ink transition-colors"
           >
-            <option value="roundtrip">ida e volta</option>
-            <option value="oneway">só ida</option>
+            <option value="roundtrip">{t.search.tripType.roundtrip}</option>
+            <option value="oneway">{t.search.tripType.oneway}</option>
           </select>
           <ChevronDownIcon className="absolute right-0 pointer-events-none text-ink-muted" />
         </div>
       </div>
 
-      {/* Card com efeito glass */}
+      {/* Glass card */}
       <div 
         className="rounded-2xl p-5 sm:p-6"
         style={{
-          background: "rgba(255, 255, 255, 0.7)",
+          background: "var(--card-bg)",
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
-          border: "1px solid rgba(255, 255, 255, 0.5)",
-          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
+          border: "1px solid var(--card-border)",
+          boxShadow: "var(--card-shadow)",
         }}
       >
-        {/* Linha 1: Trajeto (DE + PARA) */}
+        {/* Row 1: Origin + Destination */}
         <div className="flex items-center gap-2 mb-4">
           <div className="flex-1">
             <AirportField
-              label="de"
+              label={t.search.from}
               icon={<PlaneDepartIcon className="text-ink-muted" />}
               value={state.from}
               onChange={handleFromChange}
               exclude={state.to?.code}
-              placeholder="origem"
+              placeholder={t.search.origin}
             />
           </div>
 
@@ -239,32 +231,31 @@ export function SearchBar({ initialState, onSearch, mode = "default" }: SearchBa
 
           <div className="flex-1">
             <AirportField
-              label="para"
+              label={t.search.to}
               icon={<MapPinIcon className="text-ink-muted" />}
               value={state.to}
               onChange={handleToChange}
               exclude={state.from?.code}
-              placeholder="destino"
+              placeholder={t.search.destination}
             />
           </div>
         </div>
 
-        {/* Linha 2: Detalhes e Ação (IDA + VOLTA + VIAJANTES + BUSCAR) */}
+        {/* Row 2: Dates + Travelers + Search */}
         <div className="grid grid-cols-2 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2">
-          {/* Ida */}
           <DateField
-            label="ida"
+            label={t.search.departDate}
             icon={<CalendarIcon className="text-ink-muted" />}
             departDate={state.departDate}
             returnDate={state.returnDate}
             onApply={handleDatesApply}
             isRoundtrip={state.tripType === "roundtrip"}
             focusField="depart"
+            placeholder={t.search.addDate}
           />
 
-          {/* Volta */}
           <DateField
-            label="volta"
+            label={t.search.returnDate}
             icon={<CalendarIcon className="text-ink-muted" />}
             departDate={state.departDate}
             returnDate={state.returnDate}
@@ -272,31 +263,33 @@ export function SearchBar({ initialState, onSearch, mode = "default" }: SearchBa
             isRoundtrip={state.tripType === "roundtrip"}
             focusField="return"
             disabled={state.tripType === "oneway"}
+            placeholder={t.search.addDate}
           />
 
-          {/* Viajantes */}
+          {/* Travelers */}
           <div className="relative col-span-2 sm:col-span-1">
             <button
               type="button"
               onClick={() => setPaxOpen(true)}
               className={`
                 w-full h-12 px-3 text-left
-                bg-white/60 border rounded-xl
+                border rounded-xl
                 flex items-center gap-2
                 transition-all duration-150
                 ${paxOpen
                   ? "border-blue ring-1 ring-blue/20"
-                  : "border-ink/10 hover:border-ink/20 hover:bg-white/80"
+                  : "border-[var(--field-border)] hover:border-[var(--ink)]/20"
                 }
               `}
+              style={{ background: "var(--field-bg)" }}
             >
               <UsersIcon className="text-ink-muted flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="text-[10px] uppercase tracking-wider text-ink-muted">
-                  viajantes
+                  {t.search.travelers}
                 </div>
                 <div className="text-sm text-ink truncate">
-                  {formatPaxSummary(state.pax, state.cabinClass)}
+                  {formatPaxSummary(state.pax, state.cabinClass, t)}
                 </div>
               </div>
             </button>
@@ -310,7 +303,7 @@ export function SearchBar({ initialState, onSearch, mode = "default" }: SearchBa
             />
           </div>
 
-          {/* Botão buscar */}
+          {/* Search button */}
           <button
             type="button"
             onClick={handleSubmit}
@@ -326,7 +319,7 @@ export function SearchBar({ initialState, onSearch, mode = "default" }: SearchBa
               }
             `}
           >
-            {mode === "compact" ? "aplicar" : "buscar"}
+            {mode === "compact" ? t.search.apply : t.search.search}
           </button>
         </div>
       </div>

@@ -40,42 +40,46 @@ export function BackgroundWaves() {
   const parallaxFast = prefersReducedMotion ? 0 : scrollY * 0.06;
   
   const isDark = mounted && resolvedTheme === "dark";
+  
+  // Usa arquivo diferente para dark mode (se existir) ou aplica filtro
+  const wavesUrl = isDark ? "/backgrounds/waves-dark.svg" : "/backgrounds/waves.svg";
 
   return (
     <div
       className="fixed inset-0 -z-10 pointer-events-none overflow-hidden"
       aria-hidden="true"
     >
-      {/* Fundo base */}
-      <div className="absolute inset-0 bg-cream transition-colors duration-200" />
+      {/* Fundo base - usa CSS variable */}
+      <div 
+        className="absolute inset-0 transition-colors duration-300"
+        style={{ background: "var(--cream)" }}
+      />
       
       {/* Camada traseira */}
       <div
-        className="absolute inset-0 transition-opacity duration-200"
+        className="absolute inset-0 transition-opacity duration-300"
         style={{
-          backgroundImage: "url('/backgrounds/waves.svg')",
+          backgroundImage: `url('${wavesUrl}')`,
           backgroundSize: "120% 80%",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center 100%",
-          opacity: isDark ? 0.15 : 0.35,
+          opacity: isDark ? 0.4 : 0.35,
           transform: `translateY(${parallaxSlow}px) scale(1.1)`,
           animation: prefersReducedMotion ? "none" : "wavesBack 20s ease-in-out infinite",
-          filter: isDark ? "invert(0.8) hue-rotate(180deg)" : "none",
         }}
       />
 
       {/* Camada frontal */}
       <div
-        className="absolute inset-0 transition-opacity duration-200"
+        className="absolute inset-0 transition-opacity duration-300"
         style={{
-          backgroundImage: "url('/backgrounds/waves.svg')",
+          backgroundImage: `url('${wavesUrl}')`,
           backgroundSize: "100% 70%",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center 100%",
-          opacity: isDark ? 0.25 : 0.55,
+          opacity: isDark ? 0.6 : 0.55,
           transform: `translateY(${parallaxFast}px)`,
           animation: prefersReducedMotion ? "none" : "wavesFront 14s ease-in-out infinite",
-          filter: isDark ? "invert(0.8) hue-rotate(180deg)" : "none",
         }}
       />
     </div>

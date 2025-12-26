@@ -24,6 +24,7 @@ export interface Messages {
     returnDate: string;
     addDate: string;
     travelers: string;
+    adult: string;
     adults: string;
     children: string;
     infants: string;
@@ -110,6 +111,7 @@ export const pt: Messages = {
     returnDate: "volta",
     addDate: "adicionar data",
     travelers: "viajantes",
+    adult: "adulto",
     adults: "adultos",
     children: "crianças",
     infants: "bebês",

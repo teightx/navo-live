@@ -19,7 +19,7 @@ export function AirportField({
   value,
   onChange,
   exclude,
-  placeholder = "cidade ou código",
+  placeholder = "city or code",
 }: AirportFieldProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -115,14 +115,15 @@ export function AirportField({
       <div
         className={`
           w-full h-12 px-3
-          bg-white/60 border rounded-xl
+          border rounded-xl
           flex items-center gap-2
           transition-all duration-150
           ${isOpen
             ? "border-blue ring-1 ring-blue/20"
-            : "border-ink/10 hover:border-ink/20 hover:bg-white/80"
+            : "border-[var(--field-border)] hover:border-[var(--ink)]/20"
           }
         `}
+        style={{ background: "var(--field-bg)" }}
       >
         {icon && <div className="flex-shrink-0">{icon}</div>}
         
@@ -140,12 +141,7 @@ export function AirportField({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             autoComplete="off"
-            className={`
-              w-full bg-transparent border-none p-0
-              text-sm outline-none leading-tight
-              placeholder:text-ink-muted
-              ${displayValue && !isOpen ? "text-ink" : "text-ink"}
-            `}
+            className="w-full bg-transparent border-none p-0 text-sm text-ink outline-none leading-tight placeholder:text-ink-muted"
           />
         </div>
       </div>
@@ -169,10 +165,7 @@ export function AirportField({
               className={`
                 w-full px-4 py-2.5 text-left
                 transition-colors duration-75
-                ${index === highlightIndex
-                  ? "bg-cream"
-                  : "hover:bg-cream/50"
-                }
+                ${index === highlightIndex ? "bg-cream-dark/50" : "hover:bg-cream-dark/30"}
               `}
             >
               <div className="flex items-baseline justify-between gap-2">

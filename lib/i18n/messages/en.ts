@@ -33,6 +33,7 @@ export const en: Messages = {
     returnDate: "return",
     addDate: "add date",
     travelers: "travelers",
+    adult: "adult",
     adults: "adults",
     children: "children",
     infants: "infants",

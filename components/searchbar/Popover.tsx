@@ -61,11 +61,11 @@ export function Popover({
       aria-modal="true"
       className={`absolute top-full mt-2 z-50 rounded-xl ${alignmentClasses[align]} ${className}`}
       style={{
-        background: "rgba(255, 255, 255, 0.85)",
+        background: "var(--popover-bg)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
-        border: "1px solid rgba(255, 255, 255, 0.6)",
-        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
+        border: "1px solid var(--card-border)",
+        boxShadow: "var(--card-shadow)",
       }}
     >
       {children}

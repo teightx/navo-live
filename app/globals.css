@@ -42,6 +42,15 @@
 
   --accent: #e07a3f;
   --accent-soft: #e99a6a;
+
+  /* Card/Field colors - Light mode (glass effect) */
+  --card-bg: rgba(255, 255, 255, 0.7);
+  --card-border: rgba(255, 255, 255, 0.5);
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --field-bg: rgba(255, 255, 255, 0.6);
+  --field-border: rgba(0, 0, 0, 0.1);
+  --field-hover-bg: rgba(255, 255, 255, 0.8);
+  --popover-bg: rgba(255, 255, 255, 0.95);
 }
 
 /* Dark mode */
@@ -63,6 +72,15 @@
 
   --accent: #e99a6a;
   --accent-soft: #e07a3f;
+
+  /* Card/Field colors for dark mode */
+  --card-bg: rgba(35, 35, 42, 0.85);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --field-bg: rgba(50, 50, 58, 0.7);
+  --field-border: rgba(255, 255, 255, 0.08);
+  --field-hover-bg: rgba(60, 60, 70, 0.8);
+  --popover-bg: rgba(35, 35, 42, 0.98);
 }
 
 @keyframes wavesBack {

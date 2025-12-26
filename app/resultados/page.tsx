@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { LogoMark, Wordmark } from "@/components/brand";
 import { Footer, ThemeToggle, LanguageToggle } from "@/components/layout";
@@ -109,8 +109,11 @@ function ResultsContent() {
   const { t, locale } = useI18n();
   
   // Parse and normalize search state from URL
-  const urlState = parseSearchParams(searchParams);
-  const searchState = normalizeSearchState(urlState);
+  // Usar useMemo para estabilizar o objeto e evitar loop infinito
+  const searchState = useMemo(() => {
+    const urlState = parseSearchParams(searchParams);
+    return normalizeSearchState(urlState);
+  }, [searchParams]);
   
   const from = searchState.from?.code || "";
   const to = searchState.to?.code || "";
@@ -121,14 +124,21 @@ function ResultsContent() {
   const forceEmpty = searchParams.get("_empty") === "1";
   const forceError = searchParams.get("_error") === "1";
   
+  // Criar chave de serialização para estabilizar dependências
+  const searchKey = useMemo(
+    () => `${from}|${to}|${depart}|${returnDate}|${forceEmpty}|${forceError}`,
+    [from, to, depart, returnDate, forceEmpty, forceError]
+  );
+  
   const [isLoading, setIsLoading] = useState(true);
   const [results, setResults] = useState<FlightResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>("best");
 
+  // Usar searchKey como dependência única para evitar loop infinito
   useEffect(() => {
-    if (!searchState.from || !searchState.to) {
+    if (!from || !to) {
       setIsLoading(false);
       setResults([]);
       setError(null);
@@ -169,7 +179,7 @@ function ResultsContent() {
     return () => {
       cancelled = true;
     };
-  }, [searchState, forceEmpty, forceError]);
+  }, [searchKey, searchState, forceEmpty, forceError]);
 
   // Ordenar resultados baseado no filtro
   const sortedResults = [...results].sort((a, b) => {

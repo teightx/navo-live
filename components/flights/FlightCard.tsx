@@ -1,6 +1,7 @@
 "use client";
 
 import { FlightResult, formatPrice } from "@/lib/mocks/results";
+import { useI18n } from "@/lib/i18n";
 
 interface FlightCardProps {
   flight: FlightResult;
@@ -31,12 +32,17 @@ function AirlineLogo({ airline, code }: { airline: string; code: string }) {
 }
 
 export function FlightCard({ flight, onClick }: FlightCardProps) {
-  const isDirect = flight.stops === "direto";
+  const { t } = useI18n();
+  const isDirect = flight.stops === "direto" || flight.stops === "direct";
   
   return (
     <div
       onClick={onClick}
-      className="group cursor-pointer rounded-xl border border-cream-dark bg-white/80 backdrop-blur-sm hover:border-blue-soft hover:shadow-lg transition-all duration-200"
+      className="group cursor-pointer rounded-xl border backdrop-blur-sm hover:border-blue-soft hover:shadow-lg transition-all duration-200"
+      style={{
+        background: "var(--card-bg)",
+        borderColor: "var(--card-border)",
+      }}
     >
       {/* Header contextual */}
       {flight.co2 && (
@@ -87,16 +93,22 @@ export function FlightCard({ flight, onClick }: FlightCardProps) {
                   {flight.duration}
                 </div>
                 <div className="w-full relative">
-                  <div className="h-px bg-cream-dark" />
+                  <div className="h-px" style={{ background: "var(--cream-dark)" }} />
                   {/* Indicadores de escala */}
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full border-2 border-blue bg-white" />
+                  <div 
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full border-2 border-blue"
+                    style={{ background: "var(--card-bg)" }}
+                  />
                   {!isDirect && (
                     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-ink-muted" />
                   )}
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full border-2 border-blue bg-white" />
+                  <div 
+                    className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full border-2 border-blue"
+                    style={{ background: "var(--card-bg)" }}
+                  />
                 </div>
                 <div className={`text-[10px] mt-1 ${isDirect ? "text-sage" : "text-ink-muted"}`}>
-                  {isDirect ? "direto" : flight.stops}
+                  {isDirect ? t.results.direct : flight.stops}
                   {flight.stopsCities && flight.stopsCities.length > 0 && (
                     <span className="hidden sm:inline"> · {flight.stopsCities.join(", ")}</span>
                   )}
@@ -116,10 +128,10 @@ export function FlightCard({ flight, onClick }: FlightCardProps) {
           </div>
 
           {/* Coluna 3: Preço e CTA */}
-          <div className="flex items-center justify-between sm:flex-col sm:items-end gap-2 sm:w-36 sm:flex-shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 sm:border-l border-cream-dark sm:pl-4">
+          <div className="flex items-center justify-between sm:flex-col sm:items-end gap-2 sm:w-36 sm:flex-shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 sm:border-l sm:pl-4" style={{ borderColor: "var(--cream-dark)" }}>
             <div className="text-right">
               <div className="text-xs text-ink-muted">
-                {flight.offersCount} {flight.offersCount === 1 ? "oferta" : "ofertas"} a partir de
+                {flight.offersCount} {flight.offersCount === 1 ? t.results.offer : t.results.offers} {t.results.from}
               </div>
               <div className="text-xl sm:text-2xl font-bold text-ink group-hover:text-blue transition-colors">
                 {formatPrice(flight.price)}
@@ -129,7 +141,7 @@ export function FlightCard({ flight, onClick }: FlightCardProps) {
             <button
               className="px-4 py-2 rounded-lg bg-blue text-cream-soft text-sm font-medium hover:bg-blue-soft transition-colors"
             >
-              ver ofertas
+              {t.results.viewOffers}
             </button>
           </div>
         </div>
@@ -137,4 +149,3 @@ export function FlightCard({ flight, onClick }: FlightCardProps) {
     </div>
   );
 }
-

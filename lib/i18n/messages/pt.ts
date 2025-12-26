@@ -44,6 +44,18 @@ export interface Messages {
     stops: string;
     from: string;
     seeDetails: string;
+    edit: string;
+    flightsTo: string;
+    searching: string;
+    noResults: string;
+    optionsFound: string;
+    offer: string;
+    offers: string;
+    viewOffers: string;
+    dontWantToCheck: string;
+    createAlert: string;
+    noFlightsFound: string;
+    tryAdjusting: string;
   };
   flightDetails: {
     departure: string;
@@ -132,6 +144,18 @@ export const pt: Messages = {
     stops: "paradas",
     from: "a partir de",
     seeDetails: "ver detalhes",
+    edit: "editar",
+    flightsTo: "voos para",
+    searching: "buscando melhores ofertas...",
+    noResults: "nenhum resultado",
+    optionsFound: "opções encontradas",
+    offer: "oferta",
+    offers: "ofertas",
+    viewOffers: "ver ofertas",
+    dontWantToCheck: "não quer verificar todo dia?",
+    createAlert: "criar alerta de preço",
+    noFlightsFound: "nenhum voo encontrado",
+    tryAdjusting: "tente ajustar as datas ou escolher outros aeroportos para encontrar mais opções",
   },
   flightDetails: {
     departure: "partida",

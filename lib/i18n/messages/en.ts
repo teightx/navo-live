@@ -55,6 +55,18 @@ export const en: Messages = {
     stops: "stops",
     from: "from",
     seeDetails: "see details",
+    edit: "edit",
+    flightsTo: "flights to",
+    searching: "searching for best offers...",
+    noResults: "no results",
+    optionsFound: "options found",
+    offer: "offer",
+    offers: "offers",
+    viewOffers: "view offers",
+    dontWantToCheck: "don't want to check every day?",
+    createAlert: "create price alert",
+    noFlightsFound: "no flights found",
+    tryAdjusting: "try adjusting dates or choosing other airports to find more options",
   },
 
   // Flight Details

@@ -13,6 +13,8 @@ import { mockSearch } from "@/lib/search/mockSearch";
 import { useI18n } from "@/lib/i18n";
 import type { SearchState } from "@/lib/types/search";
 import { parseSearchParams, normalizeSearchState, serializeSearchState } from "@/lib/utils/searchParams";
+import { findBestOffer, calculateAveragePrice, calculateScore, parseDurationToMinutes } from "@/lib/utils/bestOffer";
+import { saveSearch, removeSearch, isSearchSaved } from "@/lib/utils/savedSearches";
 
 function LoadingSkeleton() {
   return (
@@ -135,6 +137,10 @@ function ResultsContent() {
   const [error, setError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>("best");
+  
+  // Estados para salvar busca
+  const [isSaved, setIsSaved] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "removing">("idle");
 
   // Usar searchKey como dependência única para evitar loop infinito
   // searchState, forceEmpty e forceError são estáveis via useMemo/searchParams
@@ -186,16 +192,42 @@ function ResultsContent() {
   }, [searchKey]);
 
   // Ordenar resultados baseado no filtro
-  const sortedResults = [...results].sort((a, b) => {
-    if (activeFilter === "price") return a.price - b.price;
-    if (activeFilter === "duration") {
-      const durA = parseInt(a.duration);
-      const durB = parseInt(b.duration);
-      return durA - durB;
+  const sortedResults = useMemo(() => {
+    const sorted = [...results].sort((a, b) => {
+      if (activeFilter === "price") return a.price - b.price;
+      if (activeFilter === "duration") {
+        const durA = parseDurationToMinutes(a.duration);
+        const durB = parseDurationToMinutes(b.duration);
+        return durA - durB;
+      }
+      // "best" - combina preço e duração
+      const scoreA = calculateScore(a);
+      const scoreB = calculateScore(b);
+      return scoreA - scoreB;
+    });
+    return sorted;
+  }, [results, activeFilter]);
+
+  // Calcular qual é a melhor oferta (baseado na lista original, não ordenada)
+  const bestOfferFlightId = useMemo(() => {
+    if (results.length === 0) return null;
+    const bestIndex = findBestOffer(results);
+    return results[bestIndex]?.id || null;
+  }, [results]);
+
+  // Verificar se busca está salva
+  useEffect(() => {
+    if (typeof window !== "undefined" && searchState.from && searchState.to) {
+      setIsSaved(isSearchSaved(searchState));
     }
-    // "best" - combina preço e duração
-    return (a.price * 0.6 + parseInt(a.duration) * 40) - (b.price * 0.6 + parseInt(b.duration) * 40);
-  });
+  }, [searchState]);
+
+  // Verificar se busca está salva
+  useEffect(() => {
+    if (typeof window !== "undefined" && searchState.from && searchState.to) {
+      setIsSaved(isSearchSaved(searchState));
+    }
+  }, [searchState]);
 
   // Use normalized state for SearchModal
   const initialSearchState: Partial<SearchState> = searchState;
@@ -225,6 +257,43 @@ function ResultsContent() {
     router.push(url);
   }
 
+  function handleSaveSearch() {
+    if (!searchState.from || !searchState.to) return;
+    
+    if (isSaved) {
+      // Remover busca salva
+      setSaveStatus("removing");
+      const removed = removeSearch(searchState);
+      
+      if (removed) {
+        setIsSaved(false);
+        setSaveStatus("idle");
+      } else {
+        setSaveStatus("idle");
+      }
+    } else {
+      // Salvar busca
+      setSaveStatus("saving");
+      
+      // Simular pequeno delay para feedback visual
+      setTimeout(() => {
+        const saved = saveSearch(searchState);
+        
+        if (saved) {
+          setIsSaved(true);
+          setSaveStatus("saved");
+          
+          // Resetar status após 2 segundos
+          setTimeout(() => {
+            setSaveStatus("idle");
+          }, 2000);
+        } else {
+          setSaveStatus("idle");
+        }
+      }, 300);
+    }
+  }
+
   function handleRetry() {
     if (!searchState.from || !searchState.to) return;
     
@@ -248,10 +317,6 @@ function ResultsContent() {
         setIsLoading(false);
       });
   }
-
-  const lowestPrice = sortedResults.length > 0 
-    ? Math.min(...sortedResults.map(r => r.price)) 
-    : 0;
 
   return (
     <>
@@ -283,12 +348,86 @@ function ResultsContent() {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => setShowEditModal(true)}
-                  className="text-sm text-blue hover:text-blue-soft transition-colors lowercase"
-                >
-                  {t.results.edit}
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowEditModal(true)}
+                    className="text-sm text-blue hover:text-blue-soft transition-colors lowercase"
+                  >
+                    {t.results.edit}
+                  </button>
+
+                  {/* Botão Salvar Busca */}
+                  <button
+                    onClick={handleSaveSearch}
+                    disabled={saveStatus === "saving" || saveStatus === "removing"}
+                    className="text-sm lowercase transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      color: isSaved ? "var(--sage)" : "var(--blue)",
+                    }}
+                  >
+                    {saveStatus === "saving" ? (
+                      <>
+                        <svg
+                          className="animate-spin"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 14 14"
+                          fill="none"
+                        >
+                          <circle
+                            cx="7"
+                            cy="7"
+                            r="6"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeDasharray="31.416"
+                            strokeDashoffset="23.562"
+                          />
+                        </svg>
+                        <span>{t.results.saving}</span>
+                      </>
+                    ) : saveStatus === "saved" ? (
+                      <>
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <path
+                            d="M11.5 3.5L5.5 9.5L2.5 6.5"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        <span>{t.results.searchSaved}</span>
+                      </>
+                    ) : isSaved ? (
+                      <>
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <path
+                            d="M11.5 3.5L5.5 9.5L2.5 6.5"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        <span>{t.results.removeSearch}</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <path
+                            d="M7 2.5V11.5M2.5 7H11.5"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        <span>{t.results.saveSearch}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
 
                 <div className="hidden sm:flex items-center gap-1 ml-2">
                   <LanguageToggle />
@@ -335,43 +474,37 @@ function ResultsContent() {
             <EmptyState onEditSearch={() => setShowEditModal(true)} />
           ) : (
             <div className="space-y-3">
-              {sortedResults.map((flight, index) => (
-                <div
-                  key={flight.id}
-                  style={{
-                    borderColor: index === 0 ? "var(--blue)" : undefined,
-                    boxShadow: index === 0 ? "0 0 0 1px var(--blue)" : undefined,
-                  }}
-                >
-                  <FlightCard 
-                    flight={flight} 
-                    onClick={() => handleFlightClick(flight)}
-                  />
-                </div>
-              ))}
+              {sortedResults.map((flight, index) => {
+                // Verificar se este voo é a melhor oferta (comparando por ID)
+                const isBestOffer = bestOfferFlightId === flight.id;
+                const bestOfferInfo = isBestOffer 
+                  ? { 
+                      explanation: t.results.bestOfferExplanation,
+                      priceDifference: calculateAveragePrice(results) - flight.price,
+                    }
+                  : null;
+                
+                return (
+                  <div
+                    key={flight.id}
+                    style={{
+                      borderColor: isBestOffer ? "var(--blue)" : undefined,
+                      boxShadow: isBestOffer ? "0 0 0 1px var(--blue)" : undefined,
+                    }}
+                  >
+                    <FlightCard 
+                      flight={flight} 
+                      onClick={() => handleFlightClick(flight)}
+                      isBestOffer={isBestOffer}
+                      bestOfferInfo={bestOfferInfo}
+                      searchState={searchState}
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
 
-          {!isLoading && !error && sortedResults.length > 0 && (
-            <div 
-              className="mt-10 p-6 rounded-2xl text-center"
-              style={{
-                background: "var(--card-bg)",
-                backdropFilter: "blur(8px)",
-                border: "1px solid var(--card-border)",
-              }}
-            >
-              <p className="text-ink-soft mb-4 lowercase">
-                {t.results.dontWantToCheck}
-              </p>
-              <button
-                onClick={() => console.log("criar alerta:", { from, to, lowestPrice })}
-                className="px-6 py-3 bg-blue text-cream-soft rounded-xl text-sm font-medium lowercase hover:bg-blue-soft transition-colors"
-              >
-                {t.results.createAlert}
-              </button>
-            </div>
-          )}
         </main>
 
         <Footer />
@@ -383,6 +516,7 @@ function ResultsContent() {
         initialState={initialSearchState}
         onSearch={handleSearch}
       />
+
     </>
   );
 }

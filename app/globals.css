@@ -31,7 +31,7 @@
 
   --ink: #3a3a3a;
   --ink-soft: #5a5a5a;
-  --ink-muted: #8a8a8a;
+  --ink-muted: #6a6a6a; /* Ajustado para WCAG AA (4.5:1 contraste mínimo) */
 
   --blue: #4f7386;
   --blue-soft: #7fa6b3;
@@ -51,6 +51,7 @@
   --field-border: rgba(0, 0, 0, 0.1);
   --field-hover-bg: rgba(255, 255, 255, 0.8);
   --popover-bg: rgba(255, 255, 255, 0.95);
+  --glow-opacity: 0; /* Desativa glow nas linhas de voo no modo claro */
 }
 
 /* Dark mode */
@@ -61,7 +62,7 @@
 
   --ink: #e8e8e8;
   --ink-soft: #b8b8b8;
-  --ink-muted: #707070;
+  --ink-muted: #9a9a9a; /* Ajustado para WCAG AA (4.5:1 contraste mínimo no modo escuro) */
 
   --blue: #7fa6b3;
   --blue-soft: #5a8fa0;
@@ -81,6 +82,7 @@
   --field-border: rgba(255, 255, 255, 0.08);
   --field-hover-bg: rgba(60, 60, 70, 0.8);
   --popover-bg: rgba(35, 35, 42, 0.98);
+  --glow-opacity: 1; /* Ativa glow nas linhas de voo no modo escuro */
 }
 
 @keyframes wavesBack {

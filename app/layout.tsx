@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
 import { Providers } from "@/lib/providers";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -65,6 +66,8 @@ export default function RootLayout({
         <Providers>{children}</Providers>
         {/* Portal root para modais e popovers - Camada 3: Overlays */}
         <div id="overlay-root" />
+        {/* Google Analytics 4 */}
+        <GoogleAnalytics />
       </body>
     </html>
   );

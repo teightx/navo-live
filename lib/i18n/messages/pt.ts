@@ -52,7 +52,6 @@ export interface Messages {
     offer: string;
     offers: string;
     viewOffers: string;
-    dontWantToCheck: string;
     createAlert: string;
     noFlightsFound: string;
     tryAdjusting: string;
@@ -61,6 +60,15 @@ export interface Messages {
     errorMessage: string;
     tryAgain: string;
     backToHome: string;
+    bestOffer: string;
+    bestOfferExplanation: string;
+    cheaperThanAverage: string;
+    belowAverage: string;
+    lowestRecentPrice: string;
+    saveSearch: string;
+    searchSaved: string;
+    removeSearch: string;
+    saving: string;
   };
   flightDetails: {
     departure: string;
@@ -129,8 +137,8 @@ export const pt: Messages = {
     destination: "destino",
     departDate: "ida",
     returnDate: "volta",
-    addDate: "adicionar data",
-    travelers: "viajantes",
+    addDate: "data de partida",
+    travelers: "passageiros",
     adult: "adulto",
     adults: "adultos",
     children: "crianças",
@@ -159,7 +167,6 @@ export const pt: Messages = {
     offer: "oferta",
     offers: "ofertas",
     viewOffers: "ver ofertas",
-    dontWantToCheck: "não quer verificar todo dia?",
     createAlert: "criar alerta de preço",
     noFlightsFound: "nenhum voo encontrado",
     tryAdjusting: "tente ajustar as datas ou escolher outros aeroportos para encontrar mais opções",
@@ -168,6 +175,15 @@ export const pt: Messages = {
     errorMessage: "não foi possível carregar os resultados. verifique sua conexão e tente novamente.",
     tryAgain: "tentar novamente",
     backToHome: "voltar para home",
+    bestOffer: "melhor oferta",
+    bestOfferExplanation: "menor preço considerando duração",
+    cheaperThanAverage: "R$ {amount} mais barato que a média",
+    belowAverage: "R$ {amount} abaixo da média",
+    lowestRecentPrice: "menor preço recente",
+    saveSearch: "salvar busca",
+    searchSaved: "busca salva",
+    removeSearch: "remover busca",
+    saving: "salvando...",
   },
   flightDetails: {
     departure: "partida",

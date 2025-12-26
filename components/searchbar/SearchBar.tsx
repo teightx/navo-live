@@ -333,12 +333,15 @@ export function SearchBar({ initialState, onSearch, mode = "default" }: SearchBa
               col-span-2 sm:col-span-1
               h-12 px-8 rounded-xl
               text-sm font-medium
-              transition-all duration-150
+              transition-all duration-200
               ${isValid
-                ? "bg-blue text-cream-soft hover:bg-blue-soft cursor-pointer"
+                ? "text-cream-soft cursor-pointer"
                 : "bg-ink/10 text-ink-muted cursor-not-allowed"
               }
             `}
+            style={isValid ? {
+              background: "var(--blue)",
+            } : undefined}
           >
             {mode === "compact" ? t.search.apply : t.search.search}
           </button>

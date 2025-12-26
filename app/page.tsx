@@ -12,6 +12,7 @@ import { Suspense, useState } from "react";
 import { Header, Footer } from "@/components/layout";
 import { BackgroundWaves, SearchModal } from "@/components/ui";
 import { SearchBar } from "@/components/searchbar";
+import { OpportunitiesSection } from "@/components/opportunities/OpportunitiesSection";
 import { useI18n } from "@/lib/i18n";
 import { parseSearchParams, normalizeSearchState, serializeSearchState } from "@/lib/utils/searchParams";
 import type { SearchState } from "@/lib/types/search";
@@ -69,6 +70,9 @@ function HomeContent() {
             <SearchBar mode="default" initialState={initialState} />
           </div>
         </section>
+
+        {/* Oportunidades agora */}
+        <OpportunitiesSection />
 
         <Footer />
       </main>

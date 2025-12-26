@@ -7,13 +7,23 @@
  */
 "use client";
 
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { Header, Footer } from "@/components/layout";
 import { BackgroundWaves } from "@/components/ui";
 import { SearchBar } from "@/components/searchbar";
 import { useI18n } from "@/lib/i18n";
+import { parseSearchParams, normalizeSearchState } from "@/lib/utils/searchParams";
 
-export default function Home() {
+function HomeContent() {
   const { t } = useI18n();
+  const searchParams = useSearchParams();
+  
+  // Parse URL params and normalize
+  const urlState = parseSearchParams(searchParams);
+  const initialState = Object.keys(urlState).length > 0 
+    ? normalizeSearchState(urlState)
+    : undefined;
 
   return (
     <>
@@ -31,11 +41,23 @@ export default function Home() {
             </p>
           </div>
 
-          <SearchBar mode="default" />
+          <SearchBar mode="default" initialState={initialState} />
         </section>
 
         <Footer />
       </main>
     </>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--cream)" }}>
+        <div className="text-ink-muted">carregando...</div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }

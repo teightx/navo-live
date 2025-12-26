@@ -8,11 +8,10 @@ import { Footer, ThemeToggle, LanguageToggle } from "@/components/layout";
 import { BackgroundWaves, SearchModal } from "@/components/ui";
 import { FlightCard } from "@/components/flights";
 import { ResultsFilters, type FilterType } from "@/components/results";
-import { getAirportByCode } from "@/lib/mocks/airports";
 import { generateResults, FlightResult } from "@/lib/mocks/results";
 import { useI18n } from "@/lib/i18n";
-import type { SearchState, TripType, CabinClass } from "@/lib/types/search";
-import { defaultSearchState } from "@/lib/types/search";
+import type { SearchState } from "@/lib/types/search";
+import { parseSearchParams, normalizeSearchState, serializeSearchState } from "@/lib/utils/searchParams";
 
 function LoadingSkeleton() {
   return (
@@ -70,18 +69,14 @@ function ResultsContent() {
   const router = useRouter();
   const { t, locale } = useI18n();
   
-  const from = searchParams.get("from") || "";
-  const to = searchParams.get("to") || "";
-  const depart = searchParams.get("depart") || "";
-  const returnDate = searchParams.get("return") || "";
-  const tripType = (searchParams.get("tripType") as TripType) || "roundtrip";
-  const adults = parseInt(searchParams.get("adults") || "1", 10);
-  const children = parseInt(searchParams.get("children") || "0", 10);
-  const infants = parseInt(searchParams.get("infants") || "0", 10);
-  const cabin = (searchParams.get("cabin") as CabinClass) || "economy";
-
-  const originAirport = getAirportByCode(from);
-  const destAirport = getAirportByCode(to);
+  // Parse and normalize search state from URL
+  const urlState = parseSearchParams(searchParams);
+  const searchState = normalizeSearchState(urlState);
+  
+  const from = searchState.from?.code || "";
+  const to = searchState.to?.code || "";
+  const depart = searchState.departDate || "";
+  const returnDate = searchState.returnDate || "";
   
   const [isLoading, setIsLoading] = useState(true);
   const [results, setResults] = useState<FlightResult[]>([]);
@@ -109,16 +104,8 @@ function ResultsContent() {
     return (a.price * 0.6 + parseInt(a.duration) * 40) - (b.price * 0.6 + parseInt(b.duration) * 40);
   });
 
-  const initialSearchState: Partial<SearchState> = {
-    ...defaultSearchState,
-    from: originAirport || null,
-    to: destAirport || null,
-    departDate: depart || null,
-    returnDate: returnDate || null,
-    tripType,
-    pax: { adults, children, infants },
-    cabinClass: cabin,
-  };
+  // Use normalized state for SearchModal
+  const initialSearchState: Partial<SearchState> = searchState;
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "";
@@ -130,22 +117,10 @@ function ResultsContent() {
   };
 
   function handleSearch(state: SearchState) {
-    const params = new URLSearchParams({
-      from: state.from!.code,
-      to: state.to!.code,
-      depart: state.departDate!,
-      tripType: state.tripType,
-      adults: String(state.pax.adults),
-      children: String(state.pax.children),
-      infants: String(state.pax.infants),
-      cabin: state.cabinClass,
-    });
-
-    if (state.returnDate) {
-      params.set("return", state.returnDate);
-    }
-
-    router.push(`/resultados?${params.toString()}`);
+    // Normalize and serialize to URL
+    const normalizedState = normalizeSearchState(state);
+    const queryString = serializeSearchState(normalizedState);
+    router.push(`/resultados?${queryString}`);
   }
 
   function handleFlightClick(flight: FlightResult) {
@@ -178,7 +153,7 @@ function ResultsContent() {
               <div className="flex items-center gap-4 sm:gap-6">
                 <div className="text-center">
                   <div className="text-sm sm:text-base text-ink lowercase">
-                    {originAirport?.city || from} → {destAirport?.city || to}
+                    {searchState.from?.city || from} → {searchState.to?.city || to}
                   </div>
                   <div className="text-xs text-ink-muted">
                     {formatDate(depart)}
@@ -205,7 +180,7 @@ function ResultsContent() {
         <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
           <div className="mb-6">
             <h1 className="text-xl sm:text-2xl font-medium text-ink lowercase">
-              {t.results.flightsTo} {destAirport?.city || to}
+              {t.results.flightsTo} {searchState.to?.city || to}
             </h1>
             <p className="text-ink-muted text-sm mt-1">
               {isLoading 

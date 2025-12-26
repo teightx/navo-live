@@ -10,6 +10,7 @@ import { useI18n } from "@/lib/i18n";
 import type { SearchState, TripType, Pax, CabinClass } from "@/lib/types/search";
 import { defaultSearchState } from "@/lib/types/search";
 import type { Airport } from "@/lib/mocks/airports";
+import { normalizeSearchState, serializeSearchState } from "@/lib/utils/searchParams";
 
 function formatPaxSummary(pax: Pax, cabin: CabinClass, t: ReturnType<typeof useI18n>["t"]): string {
   const parts: string[] = [];
@@ -164,27 +165,17 @@ export function SearchBar({ initialState, onSearch, mode = "default" }: SearchBa
   function handleSubmit() {
     if (!isValid) return;
 
+    // Normalize state before submitting
+    const normalizedState = normalizeSearchState(state);
+
     if (onSearch) {
-      onSearch(state);
+      onSearch(normalizedState);
       return;
     }
 
-    const params = new URLSearchParams({
-      from: state.from!.code,
-      to: state.to!.code,
-      depart: state.departDate!,
-      tripType: state.tripType,
-      adults: String(state.pax.adults),
-      children: String(state.pax.children),
-      infants: String(state.pax.infants),
-      cabin: state.cabinClass,
-    });
-
-    if (state.returnDate) {
-      params.set("return", state.returnDate);
-    }
-
-    router.push(`/resultados?${params.toString()}`);
+    // Serialize to URL and navigate
+    const queryString = serializeSearchState(normalizedState);
+    router.push(`/resultados?${queryString}`);
   }
 
   return (

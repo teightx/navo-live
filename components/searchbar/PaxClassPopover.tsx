@@ -95,11 +95,12 @@ export function PaxClassPopover({
   const maxChildren = Math.min(paxLimits.children.max, paxLimits.total - localPax.adults);
   const maxInfants = Math.min(paxLimits.infants.max, localPax.adults);
 
-  const ageLabels = locale === "pt" 
+  const isPt = locale === "pt";
+  const ageLabels = isPt 
     ? { adults: "12+ anos", children: "2-11 anos", infants: "até 2 anos" }
     : { adults: "12+ years", children: "2-11 years", infants: "under 2" };
 
-  const maxPaxLabel = locale === "pt" 
+  const maxPaxLabel = isPt 
     ? `máximo de ${paxLimits.total} passageiros`
     : `maximum ${paxLimits.total} passengers`;
 

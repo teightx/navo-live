@@ -33,7 +33,7 @@ export function DateField({
   const [isOpen, setIsOpen] = useState(false);
   const { locale } = useI18n();
 
-  const months = locale === "pt-BR" ? MONTHS_PT : MONTHS_EN;
+  const months = locale === "pt" ? MONTHS_PT : MONTHS_EN;
 
   function formatDateDisplay(date: string | null): string {
     if (!date) return "";

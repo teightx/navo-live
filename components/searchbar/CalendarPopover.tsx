@@ -61,8 +61,8 @@ export function CalendarPopover({
   focusField,
 }: CalendarPopoverProps) {
   const { locale } = useI18n();
-  const weekdays = locale === "pt-BR" ? WEEKDAYS_PT : WEEKDAYS_EN;
-  const months = locale === "pt-BR" ? MONTHS_PT : MONTHS_EN;
+  const weekdays = locale === "pt" ? WEEKDAYS_PT : WEEKDAYS_EN;
+  const months = locale === "pt" ? MONTHS_PT : MONTHS_EN;
 
   const today = useMemo(() => {
     const d = new Date();
@@ -152,7 +152,7 @@ export function CalendarPopover({
   const localDepart = departDate ? parseDate(departDate) : null;
   const localReturn = returnDate ? parseDate(returnDate) : null;
 
-  const instructionText = locale === "pt-BR" 
+  const instructionText = locale === "pt" 
     ? (focusField === "depart" ? "selecione a data de ida" : "selecione a data de volta")
     : (focusField === "depart" ? "select departure date" : "select return date");
 

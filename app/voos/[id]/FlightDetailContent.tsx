@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { LogoMark, Wordmark } from "@/components/brand";
@@ -27,11 +27,21 @@ function generatePartnerPrices(basePrice: number) {
 function LoadingSkeleton() {
   return (
     <div className="animate-pulse space-y-6">
-      <div className="h-40 rounded-xl" style={{ background: "var(--cream-dark)", opacity: 0.3 }} />
-      <div className="h-6 w-48 rounded" style={{ background: "var(--cream-dark)", opacity: 0.3 }} />
+      <div 
+        className="h-40 rounded-xl"
+        style={{ background: "var(--cream-dark)", opacity: 0.3 }}
+      />
+      <div 
+        className="h-6 w-48 rounded"
+        style={{ background: "var(--cream-dark)", opacity: 0.3 }}
+      />
       <div className="space-y-3">
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="h-16 rounded-xl" style={{ background: "var(--cream-dark)", opacity: 0.3 }} />
+          <div 
+            key={i} 
+            className="h-16 rounded-xl"
+            style={{ background: "var(--cream-dark)", opacity: 0.3 }}
+          />
         ))}
       </div>
     </div>
@@ -41,8 +51,14 @@ function LoadingSkeleton() {
 export function FlightDetailContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t, locale } = useI18n();
   const id = params.id as string;
+
+  // Preservar query params da busca para voltar
+  const backUrl = searchParams.toString() 
+    ? `/resultados?${searchParams.toString()}`
+    : "/resultados";
 
   const [isLoading, setIsLoading] = useState(true);
   const [flight, setFlight] = useState<FlightResult | null>(null);
@@ -63,22 +79,10 @@ export function FlightDetailContent() {
 
   const lowestPrice = partnerPrices.length > 0 ? partnerPrices[0].price : 0;
 
-  // Textos traduzidos
-  const texts = {
-    back: locale === "pt" ? "voltar" : "back",
-    departure: locale === "pt" ? "partida" : "departure",
-    arrival: locale === "pt" ? "chegada" : "arrival",
-    from: locale === "pt" ? "a partir de" : "from",
-    compare: locale === "pt" ? "comparar em" : "compare on",
-    sites: locale === "pt" ? "sites" : "sites",
-    lowestPrice: locale === "pt" ? "menor preço" : "lowest price",
-    pricesNote: locale === "pt" 
-      ? "preços sujeitos a alteração · verifique no site do parceiro" 
-      : "prices subject to change · check on partner site",
-    notFound: locale === "pt" ? "voo não encontrado" : "flight not found",
-    backHome: locale === "pt" ? "voltar para home" : "back to home",
-    direct: locale === "pt" ? "direto" : "direct",
-  };
+  function handleBack() {
+    // Preservar query params ao voltar
+    router.push(backUrl);
+  }
 
   return (
     <>
@@ -101,13 +105,13 @@ export function FlightDetailContent() {
 
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => router.back()}
+                  onClick={handleBack}
                   className="text-sm text-blue hover:text-blue-soft transition-colors lowercase flex items-center gap-1"
                 >
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
-                  {texts.back}
+                  {t.flightDetails.back}
                 </button>
                 <div className="hidden sm:flex items-center gap-1 ml-2">
                   <LanguageToggle />
@@ -123,6 +127,7 @@ export function FlightDetailContent() {
             <LoadingSkeleton />
           ) : flight ? (
             <>
+              {/* Resumo do voo */}
               <div 
                 className="rounded-2xl p-6 mb-8"
                 style={{
@@ -136,7 +141,10 @@ export function FlightDetailContent() {
                   <div className="flex items-center gap-3">
                     <div 
                       className="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold"
-                      style={{ backgroundColor: "var(--blue)", color: "var(--cream-soft)" }}
+                      style={{ 
+                        backgroundColor: "var(--blue)", 
+                        color: "var(--cream-soft)" 
+                      }}
                     >
                       {flight.airlineCode}
                     </div>
@@ -157,7 +165,7 @@ export function FlightDetailContent() {
                 <div className="flex items-center gap-4 mb-6">
                   <div className="flex-1">
                     <div className="text-3xl font-semibold text-ink">{flight.departure}</div>
-                    <div className="text-sm text-ink-muted">{texts.departure}</div>
+                    <div className="text-sm text-ink-muted">{t.flightDetails.departure}</div>
                   </div>
 
                   <div className="flex-1 flex flex-col items-center">
@@ -173,7 +181,10 @@ export function FlightDetailContent() {
                       />
                     </div>
                     <div className={`text-xs ${flight.stops === "direto" || flight.stops === "direct" ? "text-sage" : "text-ink-muted"}`}>
-                      {flight.stops === "direto" || flight.stops === "direct" ? texts.direct : flight.stops}
+                      {flight.stops === "direto" || flight.stops === "direct"
+                        ? t.flightDetails.direct
+                        : `${flight.stops} ${flight.stops === "1" ? t.flightDetails.stops : t.flightDetails.stopsPlural}`
+                      }
                       {flight.stopsCities && ` · ${flight.stopsCities.join(", ")}`}
                     </div>
                   </div>
@@ -183,19 +194,20 @@ export function FlightDetailContent() {
                       {flight.arrival}
                       {flight.nextDayArrival && <sup className="text-xs text-ink-muted ml-1">+1</sup>}
                     </div>
-                    <div className="text-sm text-ink-muted">{texts.arrival}</div>
+                    <div className="text-sm text-ink-muted">{t.flightDetails.arrival}</div>
                   </div>
                 </div>
 
                 <div className="text-center pt-4 border-t" style={{ borderColor: "var(--cream-dark)" }}>
-                  <span className="text-sm text-ink-muted">{texts.from} </span>
+                  <span className="text-sm text-ink-muted">{t.flightDetails.from} </span>
                   <span className="text-2xl font-bold text-blue">{formatPrice(lowestPrice)}</span>
                 </div>
               </div>
 
+              {/* Lista de ofertas por parceiro */}
               <div className="mb-8">
                 <h2 className="text-lg font-medium text-ink lowercase mb-4">
-                  {texts.compare} {partnerPrices.length} {texts.sites}
+                  {t.flightDetails.compareOnSites.replace("{count}", String(partnerPrices.length))}
                 </h2>
 
                 <div className="space-y-2">
@@ -205,10 +217,14 @@ export function FlightDetailContent() {
                       href={`https://${partner.id}.com`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-between gap-4 p-4 rounded-xl border transition-all duration-150"
+                      className="flex items-center justify-between gap-4 p-4 rounded-xl border transition-all duration-150 hover:border-blue-soft"
                       style={{
-                        background: index === 0 ? "var(--sage-light, rgba(181, 201, 163, 0.1))" : "var(--card-bg)",
-                        borderColor: index === 0 ? "var(--sage)" : "var(--card-border)",
+                        background: index === 0 
+                          ? "rgba(159, 180, 138, 0.1)" 
+                          : "var(--card-bg)",
+                        borderColor: index === 0 
+                          ? "rgba(159, 180, 138, 0.4)" 
+                          : "var(--card-border)",
                       }}
                     >
                       <div className="flex items-center gap-3">
@@ -223,7 +239,9 @@ export function FlightDetailContent() {
                         </div>
                         <div>
                           <div className="text-sm font-medium text-ink">{partner.name}</div>
-                          {index === 0 && <div className="text-xs text-sage">{texts.lowestPrice}</div>}
+                          {index === 0 && (
+                            <div className="text-xs text-sage">{t.flightDetails.lowestPrice}</div>
+                          )}
                         </div>
                       </div>
 
@@ -243,15 +261,24 @@ export function FlightDetailContent() {
                 </div>
               </div>
 
-              <p className="text-center text-xs text-ink-muted">
-                {texts.pricesNote}
-              </p>
+              {/* Explicações sobre preços */}
+              <div 
+                className="rounded-xl p-4 text-center"
+                style={{
+                  background: "var(--cream-dark)",
+                  opacity: 0.5,
+                }}
+              >
+                <p className="text-xs text-ink-muted">
+                  {t.flightDetails.pricesSubjectToChange}
+                </p>
+              </div>
             </>
           ) : (
             <div className="text-center py-16">
-              <h2 className="text-lg font-medium text-ink mb-2">{texts.notFound}</h2>
+              <h2 className="text-lg font-medium text-ink mb-2">{t.flightDetails.flightNotFound}</h2>
               <Link href="/" className="text-blue hover:text-blue-soft transition-colors">
-                {texts.backHome}
+                {t.results.backToHome}
               </Link>
             </div>
           )}

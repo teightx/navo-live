@@ -71,19 +71,22 @@ export const en: Messages = {
     errorTitle: "error searching flights",
     errorMessage: "could not load results. check your connection and try again.",
     tryAgain: "try again",
+    backToHome: "back to home",
   },
 
   // Flight Details
   flightDetails: {
     departure: "departure",
     arrival: "arrival",
-    compareIn: "compare on",
-    sites: "sites",
+    stops: "stop",
+    stopsPlural: "stops",
+    direct: "direct",
+    from: "from",
+    compareOnSites: "compare on {count} sites",
     lowestPrice: "lowest price",
-    pricesDisclaimer: "prices subject to change · verify on partner site",
+    pricesSubjectToChange: "prices subject to change · check on partner website",
     back: "back",
-    notFound: "flight not found",
-    backToHome: "back to home",
+    flightNotFound: "flight not found",
   },
 
   // Footer

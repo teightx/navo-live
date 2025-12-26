@@ -60,17 +60,20 @@ export interface Messages {
     errorTitle: string;
     errorMessage: string;
     tryAgain: string;
+    backToHome: string;
   };
   flightDetails: {
     departure: string;
     arrival: string;
-    compareIn: string;
-    sites: string;
+    stops: string;
+    stopsPlural: string;
+    direct: string;
+    from: string;
+    compareOnSites: string;
     lowestPrice: string;
-    pricesDisclaimer: string;
+    pricesSubjectToChange: string;
     back: string;
-    notFound: string;
-    backToHome: string;
+    flightNotFound: string;
   };
   footer: {
     disclaimer: string;
@@ -164,17 +167,20 @@ export const pt: Messages = {
     errorTitle: "erro ao buscar voos",
     errorMessage: "não foi possível carregar os resultados. verifique sua conexão e tente novamente.",
     tryAgain: "tentar novamente",
+    backToHome: "voltar para home",
   },
   flightDetails: {
     departure: "partida",
     arrival: "chegada",
-    compareIn: "comparar em",
-    sites: "sites",
+    stops: "parada",
+    stopsPlural: "paradas",
+    direct: "direto",
+    from: "a partir de",
+    compareOnSites: "comparar em {count} sites",
     lowestPrice: "menor preço",
-    pricesDisclaimer: "preços sujeitos a alteração · verifique no site do parceiro",
+    pricesSubjectToChange: "preços sujeitos a alteração · verifique no site do parceiro",
     back: "voltar",
-    notFound: "voo não encontrado",
-    backToHome: "voltar para home",
+    flightNotFound: "voo não encontrado",
   },
   footer: {
     disclaimer: "Preços estimados. Redirecionamos para parceiros.",

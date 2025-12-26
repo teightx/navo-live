@@ -217,7 +217,12 @@ function ResultsContent() {
   }
 
   function handleFlightClick(flight: FlightResult) {
-    router.push(`/voos/${flight.id}`);
+    // Preservar query params ao navegar para detalhes
+    const currentParams = searchParams.toString();
+    const url = currentParams 
+      ? `/voos/${flight.id}?${currentParams}`
+      : `/voos/${flight.id}`;
+    router.push(url);
   }
 
   function handleRetry() {

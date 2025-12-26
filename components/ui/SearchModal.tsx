@@ -13,6 +13,7 @@ interface SearchModalProps {
 
 export function SearchModal({ isOpen, onClose, initialState, onSearch }: SearchModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // Bloqueia scroll quando modal está aberto
   useEffect(() => {
@@ -45,16 +46,16 @@ export function SearchModal({ isOpen, onClose, initialState, onSearch }: SearchM
 
   // Focus no primeiro campo ao abrir
   useEffect(() => {
-    if (isOpen && modalRef.current) {
+    if (isOpen && contentRef.current) {
       // Pequeno delay para garantir que o modal está renderizado
       const timer = setTimeout(() => {
-        const firstInput = modalRef.current?.querySelector<HTMLInputElement>(
+        const firstInput = contentRef.current?.querySelector<HTMLInputElement>(
           'input[type="text"], input[type="search"]'
         );
         if (firstInput) {
           firstInput.focus();
         }
-      }, 100);
+      }, 150);
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
@@ -71,9 +72,10 @@ export function SearchModal({ isOpen, onClose, initialState, onSearch }: SearchM
         aria-hidden="true"
       />
 
-      {/* Modal */}
-      <div className="absolute inset-0 flex items-start justify-center pt-12 sm:pt-20 px-4 overflow-y-auto">
+      {/* Desktop: Modal centralizado */}
+      <div className="hidden sm:block absolute inset-0 flex items-start justify-center pt-12 sm:pt-20 px-4 overflow-y-auto">
         <div 
+          ref={contentRef}
           className="relative w-full max-w-4xl mb-10"
           onClick={(e) => e.stopPropagation()}
           role="dialog"
@@ -83,7 +85,7 @@ export function SearchModal({ isOpen, onClose, initialState, onSearch }: SearchM
           {/* Botão fechar */}
           <button
             onClick={onClose}
-            className="absolute -top-10 sm:-top-12 right-0 w-10 h-10 flex items-center justify-center rounded-full transition-colors"
+            className="absolute -top-10 sm:-top-12 right-0 w-10 h-10 flex items-center justify-center rounded-full transition-colors hover:opacity-80"
             style={{
               background: "var(--card-bg)",
               color: "var(--ink)",
@@ -103,6 +105,59 @@ export function SearchModal({ isOpen, onClose, initialState, onSearch }: SearchM
             }}
             mode="compact"
           />
+        </div>
+      </div>
+
+      {/* Mobile: Bottom Sheet */}
+      <div className="sm:hidden absolute inset-0 flex flex-col justify-end">
+        <div 
+          className="w-full max-h-[90vh] rounded-t-2xl overflow-hidden animate-slide-up"
+          style={{
+            background: "var(--card-bg)",
+            boxShadow: "0 -4px 20px rgba(0, 0, 0, 0.15)",
+          }}
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="search-modal-title"
+        >
+          {/* Handle bar */}
+          <div className="flex justify-center pt-3 pb-2">
+            <div 
+              className="w-10 h-1 rounded-full"
+              style={{ background: "var(--ink-muted)", opacity: 0.3 }}
+            />
+          </div>
+
+          {/* Botão fechar mobile */}
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full transition-colors"
+            style={{
+              background: "var(--cream-dark)",
+              color: "var(--ink)",
+            }}
+            aria-label="fechar"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
+
+          {/* Conteúdo com scroll */}
+          <div 
+            ref={contentRef}
+            className="overflow-y-auto max-h-[calc(90vh-60px)] px-4 pb-6"
+          >
+            <SearchBar
+              initialState={initialState}
+              onSearch={(state) => {
+                onSearch(state);
+                onClose();
+              }}
+              mode="compact"
+            />
+          </div>
         </div>
       </div>
     </div>

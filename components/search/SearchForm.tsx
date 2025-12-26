@@ -47,7 +47,7 @@ export function SearchForm() {
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-3xl">
-      <div className="bg-cream-soft/80 backdrop-blur-sm border border-cream-dark rounded-2xl p-6 sm:p-8">
+      <div className="bg-cream-soft/70 backdrop-blur-sm border border-cream-dark rounded-2xl p-6 sm:p-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           <AutocompleteField
             label="saindo de"

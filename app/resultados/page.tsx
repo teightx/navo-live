@@ -85,7 +85,7 @@ function ResultsContent() {
           </div>
 
           {/* CTA Alerta */}
-          <div className="mt-10 p-6 bg-cream-soft/80 backdrop-blur-sm border border-cream-dark rounded-2xl text-center">
+          <div className="mt-10 p-6 bg-cream-soft/70 backdrop-blur-sm border border-cream-dark rounded-2xl text-center">
             <p className="text-ink-soft mb-4 lowercase">
               não quer acompanhar todo dia?
             </p>
@@ -114,7 +114,7 @@ function FlightCard({ flight }: { flight: FlightResult }) {
   return (
     <button
       onClick={() => console.log("selecionado:", flight)}
-      className="w-full bg-cream-soft/80 backdrop-blur-sm border border-cream-dark rounded-xl p-5 sm:p-6 text-left hover:border-blue-soft transition-colors group"
+      className="w-full bg-cream-soft/70 backdrop-blur-sm border border-cream-dark rounded-xl p-5 sm:p-6 text-left hover:border-blue-soft transition-colors group"
     >
       <div className="flex items-center justify-between gap-4">
         {/* Esquerda: companhia e horários */}

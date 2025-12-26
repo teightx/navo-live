@@ -3,11 +3,11 @@
 import { useEffect, useRef } from "react";
 
 export function BackgroundWaves() {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const wavesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    const waves = wavesRef.current;
+    if (!waves) return;
 
     let ticking = false;
 
@@ -17,8 +17,9 @@ export function BackgroundWaves() {
       ticking = true;
       requestAnimationFrame(() => {
         const scrollY = window.scrollY;
-        const offset = scrollY * 0.2;
-        container.style.transform = `translate3d(0, -${offset}px, 0)`;
+        // Movimento muito sutil - 10% do scroll
+        const offset = scrollY * 0.1;
+        waves.style.transform = `translate3d(0, ${offset}px, 0)`;
         ticking = false;
       });
     };
@@ -32,19 +33,21 @@ export function BackgroundWaves() {
 
   return (
     <div
-      ref={containerRef}
-      className="fixed inset-0 -z-10 overflow-hidden pointer-events-none will-change-transform"
+      className="fixed inset-0 -z-10 pointer-events-none"
       aria-hidden="true"
     >
-      {/* Fundo base */}
+      {/* Fundo base - cobre tudo */}
       <div className="absolute inset-0 bg-cream" />
       
-      {/* Ondas SVG */}
+      {/* Ondas SVG - com parallax */}
       <div
-        className="absolute inset-0 bg-bottom bg-no-repeat bg-cover"
+        ref={wavesRef}
+        className="absolute inset-x-0 bottom-0 will-change-transform"
         style={{
+          height: "150%",
           backgroundImage: "url('/navo-live/backgrounds/waves.svg')",
-          backgroundSize: "cover",
+          backgroundSize: "100% auto",
+          backgroundRepeat: "no-repeat",
           backgroundPosition: "center bottom",
         }}
       />

@@ -63,7 +63,7 @@ export function BackgroundWaves() {
           backgroundSize: "120% 80%",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center 100%",
-          opacity: isDark ? 0.4 : 0.35,
+          opacity: isDark ? 0.4 : 0.55,
           transform: `translateY(${parallaxSlow}px) scale(1.1)`,
           animation: prefersReducedMotion ? "none" : "wavesBack 20s ease-in-out infinite",
         }}
@@ -77,7 +77,7 @@ export function BackgroundWaves() {
           backgroundSize: "100% 70%",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center 100%",
-          opacity: isDark ? 0.6 : 0.55,
+          opacity: isDark ? 0.6 : 0.75,
           transform: `translateY(${parallaxFast}px)`,
           animation: prefersReducedMotion ? "none" : "wavesFront 14s ease-in-out infinite",
         }}

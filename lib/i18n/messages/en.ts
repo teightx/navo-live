@@ -67,6 +67,10 @@ export const en: Messages = {
     createAlert: "create price alert",
     noFlightsFound: "no flights found",
     tryAdjusting: "try adjusting dates or choosing other airports to find more options",
+    editSearch: "edit search",
+    errorTitle: "error searching flights",
+    errorMessage: "could not load results. check your connection and try again.",
+    tryAgain: "try again",
   },
 
   // Flight Details

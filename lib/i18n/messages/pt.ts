@@ -56,6 +56,10 @@ export interface Messages {
     createAlert: string;
     noFlightsFound: string;
     tryAdjusting: string;
+    editSearch: string;
+    errorTitle: string;
+    errorMessage: string;
+    tryAgain: string;
   };
   flightDetails: {
     departure: string;
@@ -156,6 +160,10 @@ export const pt: Messages = {
     createAlert: "criar alerta de preço",
     noFlightsFound: "nenhum voo encontrado",
     tryAdjusting: "tente ajustar as datas ou escolher outros aeroportos para encontrar mais opções",
+    editSearch: "editar busca",
+    errorTitle: "erro ao buscar voos",
+    errorMessage: "não foi possível carregar os resultados. verifique sua conexão e tente novamente.",
+    tryAgain: "tentar novamente",
   },
   flightDetails: {
     departure: "partida",

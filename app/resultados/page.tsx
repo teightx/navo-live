@@ -8,18 +8,19 @@ import { Footer, ThemeToggle, LanguageToggle } from "@/components/layout";
 import { BackgroundWaves, SearchModal } from "@/components/ui";
 import { FlightCard } from "@/components/flights";
 import { ResultsFilters, type FilterType } from "@/components/results";
-import { generateResults, FlightResult } from "@/lib/mocks/results";
+import { FlightResult } from "@/lib/mocks/results";
+import { mockSearch } from "@/lib/search/mockSearch";
 import { useI18n } from "@/lib/i18n";
 import type { SearchState } from "@/lib/types/search";
 import { parseSearchParams, normalizeSearchState, serializeSearchState } from "@/lib/utils/searchParams";
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {[1, 2, 3, 4].map((i) => (
         <div 
           key={i} 
-          className="rounded-xl p-5 animate-pulse"
+          className="rounded-xl p-4 sm:p-5 animate-pulse"
           style={{
             background: "var(--card-bg)",
             border: "1px solid var(--card-border)",
@@ -46,7 +47,7 @@ function LoadingSkeleton() {
   );
 }
 
-function EmptyState() {
+function EmptyState({ onEditSearch }: { onEditSearch: () => void }) {
   const { t } = useI18n();
   
   return (
@@ -57,9 +58,47 @@ function EmptyState() {
         </svg>
       </div>
       <h2 className="text-lg font-medium text-ink mb-2">{t.results.noFlightsFound}</h2>
-      <p className="text-ink-muted text-sm max-w-xs mx-auto">
+      <p className="text-ink-muted text-sm max-w-xs mx-auto mb-6">
         {t.results.tryAdjusting}
       </p>
+      <button
+        onClick={onEditSearch}
+        className="px-6 py-3 bg-blue text-cream-soft rounded-xl text-sm font-medium lowercase hover:bg-blue-soft transition-colors"
+      >
+        {t.results.editSearch}
+      </button>
+    </div>
+  );
+}
+
+function ErrorState({ onRetry }: { onRetry: () => void }) {
+  const { t } = useI18n();
+  
+  return (
+    <div 
+      className="rounded-xl p-6 border"
+      style={{
+        background: "var(--card-bg)",
+        borderColor: "var(--card-border)",
+      }}
+    >
+      <div className="flex items-start gap-4">
+        <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "var(--accent)", opacity: 0.1 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ color: "var(--accent)" }}>
+            <path d="M12 8V12M12 16H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </div>
+        <div className="flex-1">
+          <h3 className="text-sm font-medium text-ink mb-1">{t.results.errorTitle}</h3>
+          <p className="text-xs text-ink-muted mb-4">{t.results.errorMessage}</p>
+          <button
+            onClick={onRetry}
+            className="px-4 py-2 bg-blue text-cream-soft rounded-lg text-xs font-medium lowercase hover:bg-blue-soft transition-colors"
+          >
+            {t.results.tryAgain}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -78,19 +117,59 @@ function ResultsContent() {
   const depart = searchState.departDate || "";
   const returnDate = searchState.returnDate || "";
   
+  // Flags para forçar estados (teste)
+  const forceEmpty = searchParams.get("_empty") === "1";
+  const forceError = searchParams.get("_error") === "1";
+  
   const [isLoading, setIsLoading] = useState(true);
   const [results, setResults] = useState<FlightResult[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>("best");
 
   useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => {
-      setResults(generateResults(from, to));
+    if (!from || !to) {
       setIsLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
-  }, [from, to, depart, returnDate]);
+      setResults([]);
+      setError(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function searchFlights() {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const result = await mockSearch(from, to, {
+          forceEmpty,
+          forceError,
+          delay: Math.random() * 300 + 600, // 600-900ms
+        });
+        
+        if (!cancelled) {
+          setResults(result.flights);
+          setError(null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Erro desconhecido");
+          setResults([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    searchFlights();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [from, to, depart, returnDate, forceEmpty, forceError]);
 
   // Ordenar resultados baseado no filtro
   const sortedResults = [...results].sort((a, b) => {
@@ -117,8 +196,7 @@ function ResultsContent() {
   };
 
   function handleSearch(state: SearchState) {
-    // Normalize and serialize to URL
-    // Usa replace para não adicionar entrada no histórico ao editar
+    // Remove flags de teste ao aplicar nova busca
     const normalizedState = normalizeSearchState(state);
     const queryString = serializeSearchState(normalizedState);
     router.replace(`/resultados?${queryString}`);
@@ -126,6 +204,30 @@ function ResultsContent() {
 
   function handleFlightClick(flight: FlightResult) {
     router.push(`/voos/${flight.id}`);
+  }
+
+  function handleRetry() {
+    if (!from || !to) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    mockSearch(from, to, {
+      forceEmpty,
+      forceError,
+      delay: Math.random() * 300 + 600,
+    })
+      .then((result) => {
+        setResults(result.flights);
+        setError(null);
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : "Erro desconhecido");
+        setResults([]);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }
 
   const lowestPrice = sortedResults.length > 0 
@@ -186,15 +288,17 @@ function ResultsContent() {
             <p className="text-ink-muted text-sm mt-1">
               {isLoading 
                 ? t.results.searching
-                : sortedResults.length === 0
-                  ? t.results.noResults
-                  : `${sortedResults.length} ${t.results.optionsFound}`
+                : error
+                  ? t.results.errorTitle
+                  : sortedResults.length === 0
+                    ? t.results.noResults
+                    : `${sortedResults.length} ${t.results.optionsFound}`
               }
             </p>
           </div>
 
           {/* Filtros */}
-          {!isLoading && sortedResults.length > 0 && (
+          {!isLoading && !error && sortedResults.length > 0 && (
             <div className="mb-6">
               <ResultsFilters 
                 activeFilter={activeFilter}
@@ -203,10 +307,13 @@ function ResultsContent() {
             </div>
           )}
 
+          {/* Estados */}
           {isLoading ? (
             <LoadingSkeleton />
+          ) : error ? (
+            <ErrorState onRetry={handleRetry} />
           ) : sortedResults.length === 0 ? (
-            <EmptyState />
+            <EmptyState onEditSearch={() => setShowEditModal(true)} />
           ) : (
             <div className="space-y-3">
               {sortedResults.map((flight, index) => (
@@ -226,7 +333,7 @@ function ResultsContent() {
             </div>
           )}
 
-          {!isLoading && sortedResults.length > 0 && (
+          {!isLoading && !error && sortedResults.length > 0 && (
             <div 
               className="mt-10 p-6 rounded-2xl text-center"
               style={{

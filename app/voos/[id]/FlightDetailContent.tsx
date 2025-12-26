@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { LogoMark, Wordmark } from "@/components/brand";
+import { Footer, ThemeToggle, LanguageToggle } from "@/components/layout";
 import { BackgroundWaves } from "@/components/ui";
 import { getFlightById, formatPrice, FlightResult } from "@/lib/mocks/results";
 
@@ -65,7 +66,7 @@ export function FlightDetailContent() {
       <BackgroundWaves />
 
       <div className="min-h-screen relative">
-        <header className="sticky top-0 z-50 bg-cream/90 backdrop-blur-sm border-b border-cream-dark">
+        <header className="sticky top-0 z-50 bg-cream/90 dark:bg-cream/95 backdrop-blur-sm border-b border-cream-dark/30">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-2">
@@ -73,15 +74,21 @@ export function FlightDetailContent() {
                 <Wordmark className="text-lg" />
               </Link>
 
-              <button
-                onClick={() => router.back()}
-                className="text-sm text-blue hover:text-blue-soft transition-colors lowercase flex items-center gap-1"
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                voltar
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => router.back()}
+                  className="text-sm text-blue hover:text-blue-soft transition-colors lowercase flex items-center gap-1"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  voltar
+                </button>
+                <div className="hidden sm:flex items-center gap-1 ml-2">
+                  <LanguageToggle />
+                  <ThemeToggle />
+                </div>
+              </div>
             </div>
           </div>
         </header>
@@ -211,6 +218,8 @@ export function FlightDetailContent() {
             </div>
           )}
         </main>
+
+        <Footer />
       </div>
     </>
   );

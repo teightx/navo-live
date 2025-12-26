@@ -4,6 +4,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { LogoMark, Wordmark } from "@/components/brand";
+import { Footer, ThemeToggle, LanguageToggle } from "@/components/layout";
 import { BackgroundWaves, SearchModal } from "@/components/ui";
 import { FlightCard } from "@/components/flights";
 import { getAirportByCode } from "@/lib/mocks/airports";
@@ -138,7 +139,7 @@ function ResultsContent() {
       <BackgroundWaves />
       
       <div className="min-h-screen relative">
-        <header className="sticky top-0 z-50 bg-cream/90 backdrop-blur-sm border-b border-cream-dark">
+        <header className="sticky top-0 z-50 bg-cream/90 dark:bg-cream/95 backdrop-blur-sm border-b border-cream-dark/30">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-2">
@@ -163,6 +164,11 @@ function ResultsContent() {
                 >
                   editar
                 </button>
+
+                <div className="hidden sm:flex items-center gap-1 ml-2">
+                  <LanguageToggle />
+                  <ThemeToggle />
+                </div>
               </div>
             </div>
           </div>
@@ -220,6 +226,8 @@ function ResultsContent() {
             </div>
           )}
         </main>
+
+        <Footer />
       </div>
 
       <SearchModal

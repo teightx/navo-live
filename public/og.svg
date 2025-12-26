@@ -1,0 +1,29 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#fcf2ed"/>
+  
+  <!-- Waves background -->
+  <path d="M0 400 Q300 350 600 380 T1200 360 V630 H0 Z" fill="#a8c4cf" opacity="0.3"/>
+  <path d="M0 450 Q400 400 700 430 T1200 410 V630 H0 Z" fill="#9fb48a" opacity="0.3"/>
+  <path d="M0 500 Q350 450 650 480 T1200 460 V630 H0 Z" fill="#e9c4a8" opacity="0.4"/>
+  
+  <!-- Logo circle -->
+  <circle cx="600" cy="260" r="80" fill="#4f7386" opacity="0.1"/>
+  
+  <!-- Plane icon -->
+  <g transform="translate(560, 220)">
+    <path d="M40 50L35 55L25 45L15 50L5 40L0 45L10 60L25 65L40 55L50 50L40 50Z" 
+          fill="#4f7386" stroke="#4f7386" stroke-width="2"/>
+    <path d="M30 20L45 40L35 45" stroke="#e07a3f" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="600" y="400" font-family="system-ui, -apple-system, sans-serif" 
+        font-size="72" font-weight="500" fill="#3a3a3a" text-anchor="middle">
+    navo
+  </text>
+  <text x="600" y="460" font-family="system-ui, -apple-system, sans-serif" 
+        font-size="28" fill="#5a5a5a" text-anchor="middle">
+    preços mudam. a gente acompanha.
+  </text>
+</svg>
+

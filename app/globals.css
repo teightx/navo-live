@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme inline {
+  /* Light mode colors */
   --color-cream: #fcf2ed;
   --color-cream-dark: #f0e4dd;
   --color-cream-soft: #fff8f5;
@@ -45,11 +46,38 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Dark mode */
+.dark {
+  --color-cream: #1a1a1f;
+  --color-cream-dark: #252529;
+  --color-cream-soft: #0f0f12;
+
+  --color-ink: #e8e8e8;
+  --color-ink-soft: #b8b8b8;
+  --color-ink-muted: #707070;
+
+  --color-blue: #7fa6b3;
+  --color-blue-soft: #4f7386;
+  --color-blue-muted: #3d5a68;
+
+  --color-sage: #b5c9a3;
+  --color-sage-soft: #9fb48a;
+
+  --color-accent: #e99a6a;
+  --color-accent-soft: #e07a3f;
+}
+
+.dark body {
+  background: var(--color-cream);
+  color: var(--color-ink);
 }
 
 ::selection {
   background: var(--color-blue-soft);
-  color: var(--color-cream);
+  color: var(--color-cream-soft);
 }
 
 @media (prefers-reduced-motion: reduce) {

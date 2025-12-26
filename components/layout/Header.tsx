@@ -13,13 +13,13 @@ export function Header() {
         <div className="flex items-center gap-8">
           <Link
             href="/sobre"
-            className="text-sm text-ink-soft hover:text-ink transition-colors"
+            className="text-sm text-ink-soft hover:text-blue transition-colors lowercase"
           >
             sobre
           </Link>
           <Link
             href="/alertas"
-            className="text-sm text-ink-soft hover:text-ink transition-colors"
+            className="text-sm text-ink-soft hover:text-blue transition-colors lowercase"
           >
             alertas
           </Link>

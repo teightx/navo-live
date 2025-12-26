@@ -13,7 +13,7 @@ export function AirportList({ airports, onSelect, highlightedIndex }: AirportLis
 
   return (
     <ul
-      className="absolute top-full left-0 right-0 mt-1 bg-white border border-cream-dark rounded-lg shadow-sm overflow-hidden z-50"
+      className="absolute top-full left-0 right-0 mt-1 bg-cream-soft border border-cream-dark rounded-lg shadow-sm overflow-hidden z-50"
       role="listbox"
     >
       {airports.map((airport, index) => (

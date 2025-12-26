@@ -81,7 +81,7 @@ export function DateField({
         onKeyDown={handleKeyDown}
         className={`
           h-12 px-4 w-full text-left
-          bg-white border rounded-lg
+          bg-cream-soft border rounded-lg
           text-base lowercase
           transition-colors duration-150
           outline-none flex items-center justify-between

@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
 import { LogoMark, Wordmark } from "@/components/brand";
+import { BackgroundWaves } from "@/components/ui";
 import { getAirportByCode } from "@/lib/mocks/airports";
 import { generateResults, formatPrice, FlightResult } from "@/lib/mocks/results";
 
@@ -29,79 +30,83 @@ function ResultsContent() {
   };
 
   return (
-    <div className="min-h-screen bg-cream">
-      {/* Header fixo */}
-      <header className="sticky top-0 z-50 bg-cream/95 backdrop-blur-sm border-b border-cream-dark">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <LogoMark className="w-6 h-6" />
-              <Wordmark className="text-lg" />
-            </Link>
-
-            <div className="flex items-center gap-4 sm:gap-6">
-              <div className="text-center">
-                <div className="text-sm sm:text-base text-ink lowercase">
-                  {originAirport?.city || from} → {destAirport?.city || to}
-                </div>
-                <div className="text-xs text-ink-muted">
-                  {formatDate(depart)}
-                  {returnDate && ` – ${formatDate(returnDate)}`}
-                </div>
-              </div>
-
-              <Link
-                href="/"
-                className="text-sm text-blue hover:text-blue-soft transition-colors lowercase"
-              >
-                editar
+    <>
+      <BackgroundWaves />
+      
+      <div className="min-h-screen relative">
+        {/* Header fixo */}
+        <header className="sticky top-0 z-50 bg-cream/90 backdrop-blur-sm border-b border-cream-dark">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
+            <div className="flex items-center justify-between">
+              <Link href="/" className="flex items-center gap-2">
+                <LogoMark className="w-6 h-6" />
+                <Wordmark className="text-lg" />
               </Link>
+
+              <div className="flex items-center gap-4 sm:gap-6">
+                <div className="text-center">
+                  <div className="text-sm sm:text-base text-ink lowercase">
+                    {originAirport?.city || from} → {destAirport?.city || to}
+                  </div>
+                  <div className="text-xs text-ink-muted">
+                    {formatDate(depart)}
+                    {returnDate && ` – ${formatDate(returnDate)}`}
+                  </div>
+                </div>
+
+                <Link
+                  href="/"
+                  className="text-sm text-blue hover:text-blue-soft transition-colors lowercase"
+                >
+                  editar
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Conteúdo */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        {/* Título */}
-        <div className="mb-6">
-          <h1 className="text-xl sm:text-2xl font-medium text-ink lowercase">
-            voos para {destAirport?.city || to}
-          </h1>
-          <p className="text-ink-muted text-sm mt-1">
-            {results.length} opções encontradas
-          </p>
-        </div>
+        {/* Conteúdo */}
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+          {/* Título */}
+          <div className="mb-6">
+            <h1 className="text-xl sm:text-2xl font-medium text-ink lowercase">
+              voos para {destAirport?.city || to}
+            </h1>
+            <p className="text-ink-muted text-sm mt-1">
+              {results.length} opções encontradas
+            </p>
+          </div>
 
-        {/* Lista de resultados */}
-        <div className="space-y-4">
-          {results.map((flight) => (
-            <FlightCard key={flight.id} flight={flight} />
-          ))}
-        </div>
+          {/* Lista de resultados */}
+          <div className="space-y-4">
+            {results.map((flight) => (
+              <FlightCard key={flight.id} flight={flight} />
+            ))}
+          </div>
 
-        {/* CTA Alerta */}
-        <div className="mt-10 p-6 bg-white/60 backdrop-blur-sm border border-cream-dark rounded-2xl text-center">
-          <p className="text-ink-soft mb-4 lowercase">
-            não quer acompanhar todo dia?
-          </p>
-          <button
-            onClick={() => {
-              console.log("criar alerta:", {
-                from,
-                to,
-                depart,
-                returnDate,
-                lowestPrice: Math.min(...results.map((r) => r.price)),
-              });
-            }}
-            className="px-6 py-3 bg-blue text-white rounded-xl text-sm font-medium lowercase hover:bg-blue-soft transition-colors"
-          >
-            criar alerta
-          </button>
-        </div>
-      </main>
-    </div>
+          {/* CTA Alerta */}
+          <div className="mt-10 p-6 bg-cream-soft/80 backdrop-blur-sm border border-cream-dark rounded-2xl text-center">
+            <p className="text-ink-soft mb-4 lowercase">
+              não quer acompanhar todo dia?
+            </p>
+            <button
+              onClick={() => {
+                console.log("criar alerta:", {
+                  from,
+                  to,
+                  depart,
+                  returnDate,
+                  lowestPrice: Math.min(...results.map((r) => r.price)),
+                });
+              }}
+              className="px-6 py-3 bg-blue text-cream-soft rounded-xl text-sm font-medium lowercase hover:bg-blue-soft transition-colors"
+            >
+              criar alerta
+            </button>
+          </div>
+        </main>
+      </div>
+    </>
   );
 }
 
@@ -109,7 +114,7 @@ function FlightCard({ flight }: { flight: FlightResult }) {
   return (
     <button
       onClick={() => console.log("selecionado:", flight)}
-      className="w-full bg-white border border-cream-dark rounded-xl p-5 sm:p-6 text-left hover:border-blue-muted transition-colors group"
+      className="w-full bg-cream-soft/80 backdrop-blur-sm border border-cream-dark rounded-xl p-5 sm:p-6 text-left hover:border-blue-soft transition-colors group"
     >
       <div className="flex items-center justify-between gap-4">
         {/* Esquerda: companhia e horários */}
@@ -169,4 +174,3 @@ export default function ResultadosPage() {
     </Suspense>
   );
 }
-

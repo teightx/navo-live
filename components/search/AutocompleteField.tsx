@@ -140,7 +140,7 @@ export function AutocompleteField({
         aria-autocomplete="list"
         className={`
           h-12 px-4 w-full
-          bg-white border rounded-lg
+          bg-cream-soft border rounded-lg
           text-ink text-base lowercase
           placeholder:text-ink-muted placeholder:lowercase
           transition-colors duration-150

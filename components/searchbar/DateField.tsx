@@ -46,21 +46,20 @@ export function DateField({
 
   return (
     <div className="relative">
-      {/* Campo */}
       <button
         type="button"
         onClick={() => !disabled && setIsOpen(true)}
         disabled={disabled}
         className={`
-          w-full h-14 px-4 text-left
-          bg-cream/80 border rounded-xl
-          flex items-center gap-3
+          w-full h-12 px-3 text-left
+          bg-white/60 border rounded-xl
+          flex items-center gap-2
           transition-all duration-150
           ${isOpen
-            ? "border-blue ring-2 ring-blue/20"
+            ? "border-blue ring-1 ring-blue/20"
             : disabled
-              ? "border-ink/5 bg-cream-dark/30 cursor-not-allowed"
-              : "border-ink/10 hover:border-ink/20 hover:bg-cream cursor-pointer"
+              ? "border-ink/5 bg-white/30 cursor-not-allowed"
+              : "border-ink/10 hover:border-ink/20 hover:bg-white/80 cursor-pointer"
           }
         `}
       >
@@ -75,11 +74,11 @@ export function DateField({
             {label}
           </div>
           <div
-            className={`text-sm truncate ${
+            className={`text-sm leading-tight truncate ${
               disabled 
                 ? "text-ink-muted/50" 
                 : displayValue 
-                  ? "font-medium text-ink" 
+                  ? "text-ink" 
                   : "text-ink-muted"
             }`}
           >
@@ -88,7 +87,6 @@ export function DateField({
         </div>
       </button>
 
-      {/* Calendar Popover */}
       <CalendarPopover
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}

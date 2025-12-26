@@ -27,12 +27,10 @@ export function AirportField({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Valor exibido no input
   const displayValue = value
     ? `${value.city.toLowerCase()} (${value.code.toLowerCase()})`
     : "";
 
-  // Filtra aeroportos
   const filtered = airports.filter((airport) => {
     if (exclude && airport.code === exclude) return false;
     if (!query) return true;
@@ -44,15 +42,12 @@ export function AirportField({
     );
   });
 
-  // Limita para 8 sugestões iniciais
   const suggestions = query ? filtered : filtered.slice(0, 8);
 
-  // Reset highlight quando muda a lista
   useEffect(() => {
     setHighlightIndex(0);
   }, [query]);
 
-  // Scroll para item destacado
   useEffect(() => {
     if (listRef.current && isOpen) {
       const item = listRef.current.children[highlightIndex] as HTMLElement;
@@ -117,16 +112,15 @@ export function AirportField({
 
   return (
     <div className="relative">
-      {/* Campo */}
       <div
         className={`
-          w-full h-14 px-4
-          bg-cream/80 border rounded-xl
-          flex items-center gap-3
+          w-full h-12 px-3
+          bg-white/60 border rounded-xl
+          flex items-center gap-2
           transition-all duration-150
           ${isOpen
-            ? "border-blue ring-2 ring-blue/20"
-            : "border-ink/10 hover:border-ink/20 hover:bg-cream"
+            ? "border-blue ring-1 ring-blue/20"
+            : "border-ink/10 hover:border-ink/20 hover:bg-white/80"
           }
         `}
       >
@@ -148,22 +142,21 @@ export function AirportField({
             autoComplete="off"
             className={`
               w-full bg-transparent border-none p-0
-              text-sm outline-none
+              text-sm outline-none leading-tight
               placeholder:text-ink-muted
-              ${displayValue && !isOpen ? "font-medium text-ink" : "text-ink"}
+              ${displayValue && !isOpen ? "text-ink" : "text-ink"}
             `}
           />
         </div>
       </div>
 
-      {/* Popover com lista */}
       <Popover
         isOpen={isOpen && suggestions.length > 0}
         onClose={() => {
           setIsOpen(false);
           setQuery("");
         }}
-        className="w-full max-h-[300px] overflow-y-auto"
+        className="w-full max-h-[280px] overflow-y-auto"
       >
         <div ref={listRef} className="py-1">
           {suggestions.map((airport, index) => (
@@ -174,7 +167,7 @@ export function AirportField({
               onClick={() => handleSelect(airport)}
               onMouseEnter={() => setHighlightIndex(index)}
               className={`
-                w-full px-4 py-3 text-left
+                w-full px-4 py-2.5 text-left
                 transition-colors duration-75
                 ${index === highlightIndex
                   ? "bg-cream"
@@ -183,10 +176,10 @@ export function AirportField({
               `}
             >
               <div className="flex items-baseline justify-between gap-2">
-                <span className="text-sm text-ink font-medium">
+                <span className="text-sm text-ink">
                   {airport.city.toLowerCase()}
                 </span>
-                <span className="text-xs font-semibold text-blue">
+                <span className="text-xs font-medium text-blue">
                   {airport.code}
                 </span>
               </div>

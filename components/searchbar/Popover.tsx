@@ -24,7 +24,6 @@ export function Popover({
 
     function handleClickOutside(event: MouseEvent) {
       if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
-        // Verifica se o clique não foi no elemento pai (segmento)
         const target = event.target as HTMLElement;
         if (!target.closest("[data-popover-trigger]")) {
           onClose();
@@ -60,17 +59,16 @@ export function Popover({
       ref={popoverRef}
       role="dialog"
       aria-modal="true"
-      className={`
-        absolute top-full mt-2 z-50
-        bg-cream-soft border border-cream-dark rounded-xl
-        shadow-lg shadow-ink/5
-        animate-in fade-in slide-in-from-top-2 duration-150
-        ${alignmentClasses[align]}
-        ${className}
-      `}
+      className={`absolute top-full mt-2 z-50 rounded-xl ${alignmentClasses[align]} ${className}`}
+      style={{
+        background: "rgba(255, 255, 255, 0.85)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        border: "1px solid rgba(255, 255, 255, 0.6)",
+        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
+      }}
     >
       {children}
     </div>
   );
 }
-

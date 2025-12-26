@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SwapButton } from "./SwapButton";
-import { TripTypeSelect } from "./TripTypeSelect";
 import { AirportField } from "./AirportField";
 import { DateField } from "./DateField";
 import { PaxClassPopover } from "./PaxClassPopover";
@@ -33,13 +32,13 @@ function formatPaxSummary(pax: Pax, cabin: CabinClass): string {
 }
 
 // Ícones SVG
-function PlaneIcon({ className = "" }: { className?: string }) {
+function PlaneTakeoffIcon({ className = "" }: { className?: string }) {
   return (
-    <svg className={className} width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none">
       <path 
-        d="M14 4L9 8L14 12M2 8H9M5 5L2 8L5 11" 
+        d="M2.5 19H21.5M4.5 17L3 11L5 11.5L7 8L10 9L13.5 3L15.5 4L14 10L17 11L20 9L21 11L16 15L4.5 17Z" 
         stroke="currentColor" 
-        strokeWidth="1.2" 
+        strokeWidth="1.5" 
         strokeLinecap="round" 
         strokeLinejoin="round"
       />
@@ -86,13 +85,22 @@ function UsersIcon({ className = "" }: { className?: string }) {
   );
 }
 
+function ChevronDownIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
 export function SearchBar() {
   const router = useRouter();
   const [state, setState] = useState<SearchState>(defaultSearchState);
   const [paxOpen, setPaxOpen] = useState(false);
 
   // Handlers
-  function handleTripTypeChange(tripType: TripType) {
+  function handleTripTypeChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const tripType = e.target.value as TripType;
     setState((s) => ({
       ...s,
       tripType,
@@ -151,20 +159,44 @@ export function SearchBar() {
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      {/* Card principal com sombra e bordas arredondadas */}
+      {/* Seletor de tipo de voo - acima do card, alinhado à esquerda */}
+      <div className="mb-3 pl-1">
+        <div className="relative inline-flex items-center">
+          <select
+            value={state.tripType}
+            onChange={handleTripTypeChange}
+            className="
+              appearance-none bg-transparent
+              text-sm text-ink-soft
+              pr-5 cursor-pointer
+              focus:outline-none
+              hover:text-ink transition-colors
+            "
+          >
+            <option value="roundtrip">ida e volta</option>
+            <option value="oneway">só ida</option>
+          </select>
+          <ChevronDownIcon className="absolute right-0 pointer-events-none text-ink-muted" />
+        </div>
+      </div>
+
+      {/* Card com efeito glass */}
       <div 
-        className="bg-cream-soft border border-cream-dark/40 rounded-2xl p-6 sm:p-8"
+        className="rounded-2xl p-5 sm:p-6"
         style={{
-          boxShadow: "0px 10px 30px rgba(0, 0, 0, 0.06), 0px 4px 8px rgba(0, 0, 0, 0.04)",
+          background: "rgba(255, 255, 255, 0.7)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          border: "1px solid rgba(255, 255, 255, 0.5)",
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
         }}
       >
-        {/* LINHA 1: Para onde (origem + destino) */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
-          {/* Origem */}
+        {/* Linha 1: Trajeto (DE + PARA) */}
+        <div className="flex items-center gap-2 mb-4">
           <div className="flex-1">
             <AirportField
               label="de"
-              icon={<PlaneIcon className="text-ink-muted" />}
+              icon={<PlaneTakeoffIcon className="text-ink-muted" />}
               value={state.from}
               onChange={handleFromChange}
               exclude={state.to?.code}
@@ -172,12 +204,8 @@ export function SearchBar() {
             />
           </div>
 
-          {/* Botão Swap */}
-          <div className="hidden sm:flex items-center justify-center">
-            <SwapButton onClick={handleSwap} />
-          </div>
+          <SwapButton onClick={handleSwap} />
 
-          {/* Destino */}
           <div className="flex-1">
             <AirportField
               label="para"
@@ -190,55 +218,44 @@ export function SearchBar() {
           </div>
         </div>
 
-        {/* LINHA 2: Quando (datas) */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-5">
-          <div className="flex-1">
-            <DateField
-              label="ida"
-              icon={<CalendarIcon className="text-ink-muted" />}
-              departDate={state.departDate}
-              returnDate={state.returnDate}
-              onApply={handleDatesApply}
-              isRoundtrip={state.tripType === "roundtrip"}
-              focusField="depart"
-            />
-          </div>
-
-          <div className="flex-1">
-            <DateField
-              label="volta"
-              icon={<CalendarIcon className="text-ink-muted" />}
-              departDate={state.departDate}
-              returnDate={state.returnDate}
-              onApply={handleDatesApply}
-              isRoundtrip={state.tripType === "roundtrip"}
-              focusField="return"
-              disabled={state.tripType === "oneway"}
-            />
-          </div>
-        </div>
-
-        {/* LINHA 3: Quem + Buscar */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          {/* TripType Select */}
-          <TripTypeSelect
-            value={state.tripType}
-            onChange={handleTripTypeChange}
+        {/* Linha 2: Detalhes e Ação (IDA + VOLTA + VIAJANTES + BUSCAR) */}
+        <div className="grid grid-cols-2 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2">
+          {/* Ida */}
+          <DateField
+            label="ida"
+            icon={<CalendarIcon className="text-ink-muted" />}
+            departDate={state.departDate}
+            returnDate={state.returnDate}
+            onApply={handleDatesApply}
+            isRoundtrip={state.tripType === "roundtrip"}
+            focusField="depart"
           />
 
-          {/* Viajantes e classe */}
-          <div className="relative flex-1">
+          {/* Volta */}
+          <DateField
+            label="volta"
+            icon={<CalendarIcon className="text-ink-muted" />}
+            departDate={state.departDate}
+            returnDate={state.returnDate}
+            onApply={handleDatesApply}
+            isRoundtrip={state.tripType === "roundtrip"}
+            focusField="return"
+            disabled={state.tripType === "oneway"}
+          />
+
+          {/* Viajantes */}
+          <div className="relative col-span-2 sm:col-span-1">
             <button
               type="button"
               onClick={() => setPaxOpen(true)}
               className={`
-                w-full h-14 px-4 text-left
-                bg-cream/80 border rounded-xl
-                flex items-center gap-3
+                w-full h-12 px-3 text-left
+                bg-white/60 border rounded-xl
+                flex items-center gap-2
                 transition-all duration-150
                 ${paxOpen
-                  ? "border-blue ring-2 ring-blue/20"
-                  : "border-ink/10 hover:border-ink/20 hover:bg-cream"
+                  ? "border-blue ring-1 ring-blue/20"
+                  : "border-ink/10 hover:border-ink/20 hover:bg-white/80"
                 }
               `}
             >
@@ -247,7 +264,7 @@ export function SearchBar() {
                 <div className="text-[10px] uppercase tracking-wider text-ink-muted">
                   viajantes
                 </div>
-                <div className="text-sm font-medium text-ink truncate">
+                <div className="text-sm text-ink truncate">
                   {formatPaxSummary(state.pax, state.cabinClass)}
                 </div>
               </div>
@@ -262,21 +279,19 @@ export function SearchBar() {
             />
           </div>
 
-          {/* Espaçador desktop */}
-          <div className="hidden sm:block flex-1 max-w-[100px]" />
-
-          {/* Botão buscar - destaque principal */}
+          {/* Botão buscar */}
           <button
             type="button"
             onClick={handleSubmit}
             disabled={!isValid}
             className={`
-              h-14 px-10 rounded-xl
-              text-base font-semibold uppercase tracking-wide
-              transition-all duration-200
+              col-span-2 sm:col-span-1
+              h-12 px-8 rounded-xl
+              text-sm font-medium
+              transition-all duration-150
               ${isValid
-                ? "bg-blue text-cream-soft hover:bg-blue-soft shadow-md shadow-blue/25 hover:shadow-lg hover:shadow-blue/30 cursor-pointer"
-                : "bg-cream-dark text-ink-muted cursor-not-allowed"
+                ? "bg-blue text-cream-soft hover:bg-blue-soft cursor-pointer"
+                : "bg-ink/10 text-ink-muted cursor-not-allowed"
               }
             `}
           >

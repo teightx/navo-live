@@ -19,13 +19,6 @@ const MONTHS = [
   "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
 ];
 
-function formatDateDisplay(date: string | null): string {
-  if (!date) return "";
-  const [year, month, day] = date.split("-").map(Number);
-  const monthName = MONTHS[month - 1].slice(0, 3);
-  return `${day} ${monthName} ${year}`;
-}
-
 function parseDate(dateStr: string): Date {
   const [year, month, day] = dateStr.split("-").map(Number);
   return new Date(year, month - 1, day);
@@ -60,8 +53,11 @@ export function CalendarPopover({
   isRoundtrip,
   focusField,
 }: CalendarPopoverProps) {
-  const today = useMemo(() => new Date(), []);
-  today.setHours(0, 0, 0, 0);
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
 
   const [currentMonth, setCurrentMonth] = useState(() => {
     if (focusField === "return" && returnDate) {
@@ -73,24 +69,9 @@ export function CalendarPopover({
     return today;
   });
 
-  const [localDepart, setLocalDepart] = useState<Date | null>(
-    departDate ? parseDate(departDate) : null
-  );
-  const [localReturn, setLocalReturn] = useState<Date | null>(
-    returnDate ? parseDate(returnDate) : null
-  );
-  const [selectingReturn, setSelectingReturn] = useState(
-    focusField === "return" && isRoundtrip
-  );
-
   // Sincroniza quando abre
   useEffect(() => {
     if (isOpen) {
-      setLocalDepart(departDate ? parseDate(departDate) : null);
-      setLocalReturn(returnDate ? parseDate(returnDate) : null);
-      setSelectingReturn(focusField === "return" && isRoundtrip);
-
-      // Define o mês inicial baseado no foco
       if (focusField === "return" && returnDate) {
         setCurrentMonth(parseDate(returnDate));
       } else if (departDate) {
@@ -99,7 +80,7 @@ export function CalendarPopover({
         setCurrentMonth(today);
       }
     }
-  }, [isOpen, departDate, returnDate, focusField, isRoundtrip, today]);
+  }, [isOpen, departDate, returnDate, focusField, today]);
 
   // Gera dias do mês atual
   const calendarDays = useMemo(() => {
@@ -112,12 +93,10 @@ export function CalendarPopover({
 
     const days: (Date | null)[] = [];
 
-    // Padding inicial
     for (let i = 0; i < startPadding; i++) {
       days.push(null);
     }
 
-    // Dias do mês
     for (let d = 1; d <= lastDay.getDate(); d++) {
       days.push(new Date(year, month, d));
     }
@@ -128,25 +107,29 @@ export function CalendarPopover({
   function handleDayClick(date: Date) {
     if (date < today) return;
 
+    const dateISO = formatToISO(date);
+
     if (!isRoundtrip) {
-      // Só ida
-      setLocalDepart(date);
-      setLocalReturn(null);
-    } else if (!selectingReturn || !localDepart) {
+      // Só ida - aplica e fecha
+      onApply(dateISO, null);
+      onClose();
+    } else if (focusField === "depart") {
       // Selecionando ida
-      setLocalDepart(date);
-      setLocalReturn(null);
-      setSelectingReturn(true);
+      // Se a data selecionada é depois da volta, limpa volta
+      if (returnDate && date >= parseDate(returnDate)) {
+        onApply(dateISO, null);
+      } else {
+        onApply(dateISO, returnDate);
+      }
+      onClose();
     } else {
       // Selecionando volta
-      if (date < localDepart) {
-        // Se clicou antes da ida, reseta
-        setLocalDepart(date);
-        setLocalReturn(null);
-      } else {
-        setLocalReturn(date);
-        setSelectingReturn(false);
+      if (departDate && date <= parseDate(departDate)) {
+        // Se clicou antes ou igual à ida, não faz nada
+        return;
       }
+      onApply(departDate, dateISO);
+      onClose();
     }
   }
 
@@ -158,27 +141,15 @@ export function CalendarPopover({
     setCurrentMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1));
   }
 
-  function handleClear() {
-    setLocalDepart(null);
-    setLocalReturn(null);
-    setSelectingReturn(false);
-  }
-
-  function handleApply() {
-    onApply(
-      localDepart ? formatToISO(localDepart) : null,
-      localReturn ? formatToISO(localReturn) : null
-    );
-    onClose();
-  }
-
-  const canApply = localDepart !== null;
   const isPrevDisabled =
     currentMonth.getFullYear() === today.getFullYear() &&
     currentMonth.getMonth() === today.getMonth();
 
+  const localDepart = departDate ? parseDate(departDate) : null;
+  const localReturn = returnDate ? parseDate(returnDate) : null;
+
   return (
-    <Popover isOpen={isOpen} onClose={onClose} className="w-[320px] p-4">
+    <Popover isOpen={isOpen} onClose={onClose} className="w-[300px] p-4">
       {/* Header do calendário */}
       <div className="flex items-center justify-between mb-4">
         <button
@@ -189,8 +160,8 @@ export function CalendarPopover({
             w-8 h-8 rounded-full flex items-center justify-center
             transition-colors duration-100
             ${isPrevDisabled
-              ? "text-ink-muted cursor-not-allowed"
-              : "text-ink hover:bg-cream"
+              ? "text-ink-muted/40 cursor-not-allowed"
+              : "text-ink hover:bg-ink/5"
             }
           `}
         >
@@ -206,7 +177,7 @@ export function CalendarPopover({
         <button
           type="button"
           onClick={handleNextMonth}
-          className="w-8 h-8 rounded-full flex items-center justify-center text-ink hover:bg-cream transition-colors duration-100"
+          className="w-8 h-8 rounded-full flex items-center justify-center text-ink hover:bg-ink/5 transition-colors duration-100"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -227,7 +198,7 @@ export function CalendarPopover({
       </div>
 
       {/* Grid de dias */}
-      <div className="grid grid-cols-7 gap-1 mb-4">
+      <div className="grid grid-cols-7 gap-1">
         {calendarDays.map((date, index) => {
           if (!date) {
             return <div key={`empty-${index}`} className="h-9" />;
@@ -240,24 +211,27 @@ export function CalendarPopover({
           const isSelected = isSelectedDepart || isSelectedReturn;
           const inRange = isInRange(date, localDepart, localReturn);
 
+          // Se estamos selecionando volta e a data é <= ida, desabilita
+          const isBeforeDepart = focusField === "return" && localDepart ? date <= localDepart : false;
+
           return (
             <button
               key={date.toISOString()}
               type="button"
               onClick={() => handleDayClick(date)}
-              disabled={isPast}
+              disabled={isPast || isBeforeDepart}
               className={`
                 h-9 rounded-lg text-sm
                 transition-colors duration-100
-                ${isPast
-                  ? "text-ink-muted/40 cursor-not-allowed"
+                ${isPast || isBeforeDepart
+                  ? "text-ink-muted/30 cursor-not-allowed"
                   : isSelected
-                    ? "bg-blue text-cream-soft font-medium"
+                    ? "bg-blue text-white font-medium"
                     : inRange
-                      ? "bg-blue-soft/20 text-ink"
+                      ? "bg-blue/10 text-ink"
                       : isToday
-                        ? "ring-1 ring-blue-soft/50 text-ink hover:bg-cream"
-                        : "text-ink hover:bg-cream"
+                        ? "ring-1 ring-blue/40 text-ink hover:bg-ink/5"
+                        : "text-ink hover:bg-ink/5"
                 }
               `}
             >
@@ -267,46 +241,10 @@ export function CalendarPopover({
         })}
       </div>
 
-      {/* Resumo da seleção */}
-      {isRoundtrip && (
-        <div className="text-xs text-ink-muted mb-4 text-center">
-          {!localDepart && "selecione a data de ida"}
-          {localDepart && !localReturn && "selecione a data de volta"}
-          {localDepart && localReturn && (
-            <>
-              {formatDateDisplay(formatToISO(localDepart))} →{" "}
-              {formatDateDisplay(formatToISO(localReturn))}
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Botões */}
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={handleClear}
-          className="flex-1 h-10 rounded-xl text-sm text-ink-soft hover:bg-cream transition-colors duration-100"
-        >
-          limpar
-        </button>
-        <button
-          type="button"
-          onClick={handleApply}
-          disabled={!canApply}
-          className={`
-            flex-1 h-10 rounded-xl text-sm font-medium
-            transition-colors duration-150
-            ${canApply
-              ? "bg-blue text-cream-soft hover:bg-blue-soft"
-              : "bg-cream-dark text-ink-muted cursor-not-allowed"
-            }
-          `}
-        >
-          aplicar
-        </button>
+      {/* Instrução sutil */}
+      <div className="mt-3 text-xs text-ink-muted text-center">
+        {focusField === "depart" ? "selecione a data de ida" : "selecione a data de volta"}
       </div>
     </Popover>
   );
 }
-

@@ -26,16 +26,22 @@
 
   --font-sans: "DM Sans", system-ui, -apple-system, sans-serif;
 
-  /* Animação das ondas */
-  --animate-waves: waves 20s ease-in-out infinite;
+  /* Animação das ondas - mais perceptível */
+  --animate-waves: waves 12s ease-in-out infinite;
 }
 
 @keyframes waves {
   0%, 100% {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+  }
+  25% {
+    transform: translateY(-25px) scale(1.01);
   }
   50% {
-    transform: translateY(-15px);
+    transform: translateY(-40px) scale(1.02);
+  }
+  75% {
+    transform: translateY(-20px) scale(1.01);
   }
 }
 

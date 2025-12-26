@@ -1,6 +1,6 @@
 "use client";
 
-import { FlightResult, formatPrice } from "@/lib/mocks/results";
+import { FlightResult, formatPrice } from "@/lib/mocks/flights";
 import { useI18n } from "@/lib/i18n";
 
 interface FlightCardProps {

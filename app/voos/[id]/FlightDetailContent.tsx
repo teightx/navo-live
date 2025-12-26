@@ -6,7 +6,7 @@ import Link from "next/link";
 import { LogoMark, Wordmark } from "@/components/brand";
 import { Footer, ThemeToggle, LanguageToggle } from "@/components/layout";
 import { BackgroundWaves } from "@/components/ui";
-import { getFlightById, formatPrice, FlightResult } from "@/lib/mocks/results";
+import { getFlightById, formatPrice, FlightResult } from "@/lib/mocks/flights";
 import { useI18n } from "@/lib/i18n";
 
 const PARTNERS = [

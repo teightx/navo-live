@@ -8,7 +8,7 @@ import { Footer, ThemeToggle, LanguageToggle } from "@/components/layout";
 import { BackgroundWaves, SearchModal } from "@/components/ui";
 import { FlightCard } from "@/components/flights";
 import { ResultsFilters, type FilterType } from "@/components/results";
-import { FlightResult } from "@/lib/mocks/results";
+import { FlightResult } from "@/lib/mocks/flights";
 import { mockSearch } from "@/lib/search/mockSearch";
 import { useI18n } from "@/lib/i18n";
 import type { SearchState } from "@/lib/types/search";
@@ -128,7 +128,7 @@ function ResultsContent() {
   const [activeFilter, setActiveFilter] = useState<FilterType>("best");
 
   useEffect(() => {
-    if (!from || !to) {
+    if (!searchState.from || !searchState.to) {
       setIsLoading(false);
       setResults([]);
       setError(null);
@@ -142,7 +142,7 @@ function ResultsContent() {
       setError(null);
       
       try {
-        const result = await mockSearch(from, to, {
+        const result = await mockSearch(searchState, {
           forceEmpty,
           forceError,
           delay: Math.random() * 300 + 600, // 600-900ms
@@ -169,7 +169,7 @@ function ResultsContent() {
     return () => {
       cancelled = true;
     };
-  }, [from, to, depart, returnDate, forceEmpty, forceError]);
+  }, [searchState, forceEmpty, forceError]);
 
   // Ordenar resultados baseado no filtro
   const sortedResults = [...results].sort((a, b) => {
@@ -207,12 +207,12 @@ function ResultsContent() {
   }
 
   function handleRetry() {
-    if (!from || !to) return;
+    if (!searchState.from || !searchState.to) return;
     
     setIsLoading(true);
     setError(null);
     
-    mockSearch(from, to, {
+    mockSearch(searchState, {
       forceEmpty,
       forceError,
       delay: Math.random() * 300 + 600,

@@ -1,4 +1,5 @@
-import { generateResults, type FlightResult } from "@/lib/mocks/results";
+import { getMockFlights, type FlightResult } from "@/lib/mocks/flights";
+import type { SearchState } from "@/lib/types/search";
 
 export interface SearchResult {
   flights: FlightResult[];
@@ -8,10 +9,11 @@ export interface SearchResult {
 /**
  * Mock search function with delay simulation
  * Supports forcing empty/error states via query params for testing
+ * 
+ * Uses getMockFlights() as the single source of truth for flight mocks
  */
 export async function mockSearch(
-  from: string,
-  to: string,
+  searchState: SearchState,
   options?: {
     forceEmpty?: boolean;
     forceError?: boolean;
@@ -32,8 +34,7 @@ export async function mockSearch(
     return { flights: [] };
   }
 
-  // Normal search
-  const flights = generateResults(from, to);
+  // Normal search - uses getMockFlights as single source of truth
+  const flights = getMockFlights(searchState);
   return { flights };
 }
-

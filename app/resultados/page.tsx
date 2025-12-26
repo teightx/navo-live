@@ -137,6 +137,7 @@ function ResultsContent() {
   const [activeFilter, setActiveFilter] = useState<FilterType>("best");
 
   // Usar searchKey como dependência única para evitar loop infinito
+  // searchState, forceEmpty e forceError são estáveis via useMemo/searchParams
   useEffect(() => {
     if (!from || !to) {
       setIsLoading(false);
@@ -179,7 +180,10 @@ function ResultsContent() {
     return () => {
       cancelled = true;
     };
-  }, [searchKey, searchState, forceEmpty, forceError]);
+    // searchKey já captura todas as mudanças relevantes (from, to, depart, returnDate, forceEmpty, forceError)
+    // searchState é memoizado e só muda quando searchParams muda, que é capturado por searchKey
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchKey]);
 
   // Ordenar resultados baseado no filtro
   const sortedResults = [...results].sort((a, b) => {

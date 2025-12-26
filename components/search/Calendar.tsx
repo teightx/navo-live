@@ -134,7 +134,7 @@ export function Calendar({
           const isSelectedStart = selectedStart && isSameDay(date, selectedStart);
           const isSelectedEnd = selectedEnd && isSameDay(date, selectedEnd);
           const isSelected = isSelectedStart || isSelectedEnd;
-          const inRange = isInRange(date, selectedStart, selectedEnd);
+          const inRange = isInRange(date, selectedStart ?? null, selectedEnd ?? null);
           const isPast = isPastDate(date);
           const isDisabled = isPast || isBeforeStart(date);
 

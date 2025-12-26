@@ -7,7 +7,7 @@
 
 import "server-only";
 import type { AmadeusToken, AmadeusTokenResponse } from "./types";
-import { getAmadeusConfig } from "./client";
+import { getAmadeusConfig } from "./config";
 
 // In-memory token cache
 let cachedToken: AmadeusToken | null = null;

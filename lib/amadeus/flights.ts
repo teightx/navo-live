@@ -6,7 +6,7 @@
  */
 
 import "server-only";
-import { amadeusRequest } from "./client";
+import { amadeusFetch } from "./client";
 import type {
   AmadeusFlightOffer,
   AmadeusFlightOffersResponse,
@@ -248,11 +248,11 @@ export async function searchFlightsAmadeus(searchState: SearchState): Promise<Fl
     travelClass: request.travelClass,
   });
 
-  const response = await amadeusRequest<AmadeusFlightOffersResponse>(
+  const response = await amadeusFetch<AmadeusFlightOffersResponse>(
     "/v2/shopping/flight-offers",
     {
       method: "GET",
-      params: {
+      query: {
         currencyCode: request.currencyCode,
         originLocationCode: request.originLocationCode,
         destinationLocationCode: request.destinationLocationCode,

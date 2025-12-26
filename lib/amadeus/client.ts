@@ -1,70 +1,132 @@
 /**
  * Amadeus API Client
  *
- * Base client for making authenticated requests to Amadeus API
+ * Robust HTTP wrapper for Amadeus API with retry, timeout, and error handling
  * Server-only module - do not import in client components
  */
 
 import "server-only";
-import type { AmadeusConfig, AmadeusErrorResponse } from "./types";
 import { getAccessToken } from "./auth";
+import { getAmadeusBaseUrl } from "./config";
+
+// Re-export config functions for convenience
+export { getAmadeusConfig, isAmadeusConfigured, getAmadeusBaseUrl } from "./config";
 
 // ============================================================================
-// Configuration
+// Constants
 // ============================================================================
 
-/**
- * Get Amadeus configuration from environment variables
- * Throws if required variables are not set
- */
-export function getAmadeusConfig(): AmadeusConfig {
-  const baseUrl = process.env.AMADEUS_BASE_URL;
-  const clientId = process.env.AMADEUS_CLIENT_ID;
-  const clientSecret = process.env.AMADEUS_CLIENT_SECRET;
+const DEFAULT_TIMEOUT_MS = 10_000;
+const MAX_RETRIES = 2; // Total attempts = 3 (initial + 2 retries)
+const RETRY_DELAYS_MS = [200, 500]; // Backoff delays
 
-  if (!baseUrl || !clientId || !clientSecret) {
-    throw new Error(
-      "Missing Amadeus configuration. Required env vars: AMADEUS_BASE_URL, AMADEUS_CLIENT_ID, AMADEUS_CLIENT_SECRET"
-    );
+// ============================================================================
+// Error Types
+// ============================================================================
+
+export interface AmadeusApiError {
+  code: string;
+  status: number;
+  message: string;
+  details?: unknown;
+  requestId: string;
+}
+
+export class AmadeusError extends Error {
+  readonly code: string;
+  readonly status: number;
+  readonly details?: unknown;
+  readonly requestId: string;
+
+  constructor(error: AmadeusApiError) {
+    super(error.message);
+    this.name = "AmadeusError";
+    this.code = error.code;
+    this.status = error.status;
+    this.details = error.details;
+    this.requestId = error.requestId;
+
+    // Maintains proper stack trace in V8
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, AmadeusError);
+    }
   }
 
-  return {
-    baseUrl,
-    clientId,
-    clientSecret,
+  toJSON(): AmadeusApiError {
+    return {
+      code: this.code,
+      status: this.status,
+      message: this.message,
+      details: this.details,
+      requestId: this.requestId,
+    };
+  }
+}
+
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface AmadeusFetchOptions {
+  method?: "GET" | "POST";
+  query?: Record<string, string | number | boolean | undefined>;
+  body?: unknown;
+  headers?: Record<string, string>;
+  timeoutMs?: number;
+}
+
+interface AmadeusErrorResponseItem {
+  code?: number;
+  title?: string;
+  detail?: string;
+  status?: number;
+  source?: {
+    parameter?: string;
+    pointer?: string;
   };
 }
 
-/**
- * Check if Amadeus is configured (all env vars present)
- */
-export function isAmadeusConfigured(): boolean {
-  return !!(
-    process.env.AMADEUS_BASE_URL &&
-    process.env.AMADEUS_CLIENT_ID &&
-    process.env.AMADEUS_CLIENT_SECRET
-  );
+interface AmadeusErrorBody {
+  errors?: AmadeusErrorResponseItem[];
 }
 
 // ============================================================================
-// HTTP Client
+// Helpers
 // ============================================================================
 
-interface RequestOptions {
-  method?: "GET" | "POST";
-  params?: Record<string, string | number | boolean | undefined>;
-  body?: Record<string, unknown>;
-  retries?: number;
+/**
+ * Generate unique request ID for tracing
+ */
+function generateRequestId(): string {
+  return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-const DEFAULT_RETRIES = 3;
-const RETRY_DELAY_MS = 1000;
+/**
+ * Build URL with encoded query parameters
+ */
+function buildUrl(
+  baseUrl: string,
+  path: string,
+  query?: Record<string, string | number | boolean | undefined>
+): string {
+  const url = new URL(path, baseUrl);
+
+  if (query) {
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined && value !== null) {
+        url.searchParams.set(key, String(value));
+      }
+    }
+  }
+
+  return url.toString();
+}
 
 /**
- * Calculate exponential backoff delay
+ * Check if status code is retryable (429 rate limit or 5xx server error)
  */
-function getRetryDelay(attempt: number): number {
-  return RETRY_DELAY_MS * Math.pow(2, attempt);
+function isRetryableStatus(status: number): boolean {
+  return status === 429 || (status >= 500 && status < 600);
 }
 
 /**
@@ -75,101 +137,238 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Check if error is retryable (rate limit or server error)
+ * Check if running in development mode
  */
-function isRetryableError(status: number): boolean {
-  // Rate limit (429) or server errors (5xx)
-  return status === 429 || (status >= 500 && status < 600);
+function isDev(): boolean {
+  return process.env.NODE_ENV === "development";
 }
 
 /**
- * Make an authenticated request to Amadeus API
+ * Parse Amadeus error response body
  */
-export async function amadeusRequest<T>(
-  endpoint: string,
-  options: RequestOptions = {}
-): Promise<T> {
-  const { method = "GET", params, body, retries = DEFAULT_RETRIES } = options;
-  const config = getAmadeusConfig();
+function parseErrorBody(body: string): AmadeusErrorBody | null {
+  try {
+    return JSON.parse(body) as AmadeusErrorBody;
+  } catch {
+    return null;
+  }
+}
 
-  // Build URL with query params
-  const url = new URL(`${config.baseUrl}${endpoint}`);
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined) {
-        url.searchParams.set(key, String(value));
-      }
+/**
+ * Create AmadeusError from response
+ */
+function createErrorFromResponse(
+  status: number,
+  body: string,
+  requestId: string,
+  fallbackMessage: string
+): AmadeusError {
+  const parsed = parseErrorBody(body);
+  const firstError = parsed?.errors?.[0];
+
+  return new AmadeusError({
+    code: firstError?.code ? String(firstError.code) : `HTTP_${status}`,
+    status,
+    message: firstError?.detail || firstError?.title || fallbackMessage,
+    details: firstError?.source,
+    requestId,
+  });
+}
+
+/**
+ * Create AmadeusError from network/timeout error
+ */
+function createNetworkError(
+  error: unknown,
+  requestId: string,
+  isTimeout: boolean
+): AmadeusError {
+  if (isTimeout) {
+    return new AmadeusError({
+      code: "TIMEOUT",
+      status: 408,
+      message: "Request timeout",
+      requestId,
     });
   }
 
-  let lastError: Error | null = null;
+  const message = error instanceof Error ? error.message : "Network error";
 
-  for (let attempt = 0; attempt <= retries; attempt++) {
+  return new AmadeusError({
+    code: "NETWORK_ERROR",
+    status: 0,
+    message,
+    requestId,
+  });
+}
+
+/**
+ * Log request (dev only)
+ */
+function logRequest(requestId: string, path: string, status: number, durationMs: number): void {
+  if (isDev()) {
+    console.log(`[Amadeus] ${requestId} | ${path} | ${status} | ${durationMs}ms`);
+  }
+}
+
+// ============================================================================
+// Main Function
+// ============================================================================
+
+/**
+ * Make an authenticated request to Amadeus API
+ *
+ * Features:
+ * - Automatic token management via getAmadeusAccessToken()
+ * - Timeout handling with AbortController (default 10s)
+ * - Retry logic: 2 retries (total 3 attempts) for 429 and 5xx errors
+ * - Backoff delays: 200ms, 500ms
+ * - Normalized error responses
+ *
+ * @param path - API endpoint path (e.g., "/v2/shopping/flight-offers")
+ * @param options - Request options
+ * @returns Typed API response
+ * @throws AmadeusError on failure
+ *
+ * @example
+ * // GET request with query params
+ * const response = await amadeusFetch<FlightOffersResponse>("/v2/shopping/flight-offers", {
+ *   query: {
+ *     originLocationCode: "GRU",
+ *     destinationLocationCode: "LIS",
+ *     departureDate: "2025-03-15",
+ *     adults: 1,
+ *   },
+ * });
+ *
+ * @example
+ * // POST request with body
+ * const response = await amadeusFetch<FlightPriceResponse>("/v1/shopping/flight-offers/pricing", {
+ *   method: "POST",
+ *   body: { data: { type: "flight-offer", flightOffers: [...] } },
+ * });
+ */
+export async function amadeusFetch<T>(
+  path: string,
+  options: AmadeusFetchOptions = {}
+): Promise<T> {
+  const {
+    method = "GET",
+    query,
+    body,
+    headers: customHeaders,
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+  } = options;
+
+  const requestId = generateRequestId();
+  const baseUrl = getAmadeusBaseUrl();
+  const url = buildUrl(baseUrl, path, query);
+
+  let lastError: AmadeusError | null = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const startTime = Date.now();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
-      // Get fresh token for each attempt (handles token expiration)
+      // Get fresh token for each attempt (handles token expiration/refresh)
       const accessToken = await getAccessToken();
 
-      const response = await fetch(url.toString(), {
+      const response = await fetch(url, {
         method,
+        signal: controller.signal,
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
           Accept: "application/json",
+          "X-Request-Id": requestId,
+          ...customHeaders,
         },
-        body: body ? JSON.stringify(body) : undefined,
+        body: body !== undefined ? JSON.stringify(body) : undefined,
       });
+
+      clearTimeout(timeoutId);
+      const durationMs = Date.now() - startTime;
+      logRequest(requestId, path, response.status, durationMs);
 
       // Success
       if (response.ok) {
-        return await response.json();
+        return (await response.json()) as T;
       }
 
-      // Handle Amadeus errors
+      // Error response
       const errorBody = await response.text();
-      let errorData: AmadeusErrorResponse | null = null;
+      const error = createErrorFromResponse(
+        response.status,
+        errorBody,
+        requestId,
+        `Amadeus API error: ${response.status}`
+      );
 
-      try {
-        errorData = JSON.parse(errorBody) as AmadeusErrorResponse;
-      } catch {
-        // Not JSON error response
-      }
-
-      const errorMessage =
-        errorData?.errors?.[0]?.detail ||
-        errorData?.errors?.[0]?.title ||
-        `Amadeus API error: ${response.status}`;
-
-      console.error("[Amadeus Client] Request failed:", {
-        attempt: attempt + 1,
-        status: response.status,
-        endpoint,
-        error: errorMessage,
-      });
-
-      // Check if we should retry
-      if (isRetryableError(response.status) && attempt < retries) {
-        const delay = getRetryDelay(attempt);
-        console.log(`[Amadeus Client] Retrying in ${delay}ms...`);
+      // Check if retryable
+      if (isRetryableStatus(response.status) && attempt < MAX_RETRIES) {
+        const delay = RETRY_DELAYS_MS[attempt] ?? 500;
+        if (isDev()) {
+          console.log(`[Amadeus] ${requestId} | Retry ${attempt + 1}/${MAX_RETRIES} in ${delay}ms`);
+        }
         await sleep(delay);
+        lastError = error;
         continue;
       }
 
-      // Non-retryable error or max retries exceeded
-      throw new Error(errorMessage);
+      throw error;
     } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
+      clearTimeout(timeoutId);
+      const durationMs = Date.now() - startTime;
 
-      // Network errors - retry if we have retries left
-      if (attempt < retries) {
-        const delay = getRetryDelay(attempt);
-        console.log(`[Amadeus Client] Network error, retrying in ${delay}ms...`);
+      // If it's already an AmadeusError, handle retry or rethrow
+      if (error instanceof AmadeusError) {
+        if (isRetryableStatus(error.status) && attempt < MAX_RETRIES) {
+          const delay = RETRY_DELAYS_MS[attempt] ?? 500;
+          await sleep(delay);
+          lastError = error;
+          continue;
+        }
+        throw error;
+      }
+
+      // Network/timeout errors
+      const isTimeout = error instanceof DOMException && error.name === "AbortError";
+      const networkError = createNetworkError(error, requestId, isTimeout);
+
+      logRequest(requestId, path, networkError.status, durationMs);
+
+      // Retry network errors
+      if (attempt < MAX_RETRIES) {
+        const delay = RETRY_DELAYS_MS[attempt] ?? 500;
+        if (isDev()) {
+          console.log(`[Amadeus] ${requestId} | Network retry ${attempt + 1}/${MAX_RETRIES} in ${delay}ms`);
+        }
         await sleep(delay);
+        lastError = networkError;
         continue;
       }
+
+      throw networkError;
     }
   }
 
-  // All retries exhausted
-  throw lastError || new Error("Amadeus request failed after all retries");
+  // All retries exhausted (shouldn't reach here, but TypeScript needs it)
+  throw lastError ?? new AmadeusError({
+    code: "UNKNOWN",
+    status: 0,
+    message: "Request failed after all retries",
+    requestId,
+  });
 }
 
+// ============================================================================
+// Convenience Aliases
+// ============================================================================
+
+/**
+ * Alias for amadeusFetch (backwards compatibility)
+ * @deprecated Use amadeusFetch instead
+ */
+export const amadeusRequest = amadeusFetch;

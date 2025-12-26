@@ -5,8 +5,23 @@
  * All modules are server-only
  */
 
+// Auth
 export { getAccessToken, clearTokenCache, hasValidToken } from "./auth";
-export { amadeusRequest, getAmadeusConfig, isAmadeusConfigured } from "./client";
-export { searchFlightsAmadeus } from "./flights";
-export type * from "./types";
 
+// Config
+export { getAmadeusConfig, isAmadeusConfigured, getAmadeusBaseUrl } from "./config";
+
+// Client
+export {
+  amadeusFetch,
+  amadeusRequest, // deprecated alias
+  AmadeusError,
+  type AmadeusApiError,
+  type AmadeusFetchOptions,
+} from "./client";
+
+// Flights
+export { searchFlightsAmadeus } from "./flights";
+
+// Types
+export type * from "./types";

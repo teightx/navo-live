@@ -95,8 +95,12 @@ export function AirportField({
   }
 
   function handleFocus() {
-    setIsOpen(true);
-    setQuery("");
+    // Não abrir automaticamente se o input já tem valor (evita abrir ao focar no modal)
+    // O usuário pode clicar ou digitar para abrir
+    if (!value) {
+      setIsOpen(true);
+      setQuery("");
+    }
   }
 
   function handleBlur() {

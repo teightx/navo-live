@@ -44,39 +44,39 @@ export function SearchModal({ isOpen, onClose, initialState, onSearch }: SearchM
     };
   }, [isOpen, onClose]);
 
-  // Focus no primeiro campo ao abrir
-  useEffect(() => {
-    if (isOpen && contentRef.current) {
-      // Pequeno delay para garantir que o modal está renderizado
-      const timer = setTimeout(() => {
-        const firstInput = contentRef.current?.querySelector<HTMLInputElement>(
-          'input[type="text"], input[type="search"]'
-        );
-        if (firstInput) {
-          firstInput.focus();
-        }
-      }, 150);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen]);
+  // Não fazer focus automático para evitar que popovers abram automaticamente
+  // O usuário pode clicar no campo quando quiser
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[9999]" ref={modalRef}>
-      {/* Overlay */}
+      {/* Overlay - clicável para fechar */}
       <div 
-        className="absolute inset-0 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 backdrop-blur-sm transition-opacity cursor-pointer"
         style={{ background: "rgba(0, 0, 0, 0.2)" }}
-        onClick={onClose}
+        onClick={(e) => {
+          // Garantir que o clique no overlay fecha o modal
+          if (e.target === e.currentTarget) {
+            onClose();
+          }
+        }}
         aria-hidden="true"
       />
 
       {/* Desktop: Modal centralizado */}
-      <div className="hidden sm:block absolute inset-0 flex items-start justify-center pt-12 sm:pt-20 px-4 overflow-y-auto">
+      <div 
+        className="hidden sm:flex absolute inset-0 items-center justify-center px-4"
+        onClick={(e) => {
+          // Fechar se clicar no container (mas não no conteúdo)
+          if (e.target === e.currentTarget) {
+            onClose();
+          }
+        }}
+      >
         <div 
           ref={contentRef}
-          className="relative w-full max-w-4xl mb-10"
+          className="relative w-full max-w-4xl"
           onClick={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
@@ -85,7 +85,7 @@ export function SearchModal({ isOpen, onClose, initialState, onSearch }: SearchM
           {/* Botão fechar */}
           <button
             onClick={onClose}
-            className="absolute -top-10 sm:-top-12 right-0 w-10 h-10 flex items-center justify-center rounded-full transition-colors hover:opacity-80"
+            className="absolute -top-12 right-0 w-10 h-10 flex items-center justify-center rounded-full transition-colors hover:opacity-80 z-10"
             style={{
               background: "var(--card-bg)",
               color: "var(--ink)",
@@ -109,9 +109,17 @@ export function SearchModal({ isOpen, onClose, initialState, onSearch }: SearchM
       </div>
 
       {/* Mobile: Bottom Sheet */}
-      <div className="sm:hidden absolute inset-0 flex flex-col justify-end">
+      <div 
+        className="sm:hidden absolute inset-0 flex flex-col justify-end"
+        onClick={(e) => {
+          // Fechar se clicar no container (mas não no bottom sheet)
+          if (e.target === e.currentTarget) {
+            onClose();
+          }
+        }}
+      >
         <div 
-          className="w-full max-h-[90vh] rounded-t-2xl overflow-hidden animate-slide-up"
+          className="w-full max-h-[90vh] rounded-t-2xl overflow-hidden animate-slide-up relative z-10"
           style={{
             background: "var(--card-bg)",
             boxShadow: "0 -4px 20px rgba(0, 0, 0, 0.15)",
@@ -121,18 +129,22 @@ export function SearchModal({ isOpen, onClose, initialState, onSearch }: SearchM
           aria-modal="true"
           aria-labelledby="search-modal-title"
         >
-          {/* Handle bar */}
-          <div className="flex justify-center pt-3 pb-2">
+          {/* Handle bar - clicável para fechar */}
+          <button
+            onClick={onClose}
+            className="w-full flex justify-center pt-3 pb-2 cursor-pointer active:opacity-70"
+            aria-label="fechar"
+          >
             <div 
-              className="w-10 h-1 rounded-full"
+              className="w-10 h-1 rounded-full pointer-events-none"
               style={{ background: "var(--ink-muted)", opacity: 0.3 }}
             />
-          </div>
+          </button>
 
           {/* Botão fechar mobile */}
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full transition-colors"
+            className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full transition-colors z-20"
             style={{
               background: "var(--cream-dark)",
               color: "var(--ink)",

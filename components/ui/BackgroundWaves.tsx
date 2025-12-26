@@ -5,14 +5,9 @@ import { useEffect, useState } from "react";
 /**
  * BackgroundWaves - Fundo animado com parallax
  * 
- * Bug anterior: A animação translateY movia o SVG para cima, expondo
- * uma "linha reta" na parte inferior onde o fundo terminava abruptamente.
- * 
- * Solução: 
- * 1. Usar height: 200% para garantir cobertura total mesmo com movimento
- * 2. Posicionar bottom: -50% para que o SVG sempre cubra a viewport
- * 3. Usar clip-path no container pai para cortar qualquer overflow
- * 4. Duas camadas com velocidades diferentes criam profundidade
+ * Correção mobile: As ondas precisam cobrir toda a viewport,
+ * não apenas a parte inferior. Usamos backgroundSize em vh
+ * para garantir que as ondas sejam visíveis em qualquer tela.
  */
 export function BackgroundWaves() {
   const [scrollY, setScrollY] = useState(0);
@@ -41,46 +36,41 @@ export function BackgroundWaves() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [prefersReducedMotion]);
 
-  const parallaxSlow = prefersReducedMotion ? 0 : scrollY * 0.05;
-  const parallaxFast = prefersReducedMotion ? 0 : scrollY * 0.1;
+  const parallaxSlow = prefersReducedMotion ? 0 : scrollY * 0.03;
+  const parallaxFast = prefersReducedMotion ? 0 : scrollY * 0.06;
 
   return (
     <div
-      className="fixed inset-0 -z-10 pointer-events-none"
-      style={{ clipPath: "inset(0)" }}
+      className="fixed inset-0 -z-10 pointer-events-none overflow-hidden"
       aria-hidden="true"
     >
       {/* Fundo base sólido */}
       <div className="absolute inset-0 bg-cream" />
       
-      {/* Camada traseira - mais lenta, mais translúcida */}
+      {/* Camada traseira - cobre toda viewport */}
       <div
-        className="absolute inset-x-0"
+        className="absolute inset-0"
         style={{
-          height: "200%",
-          bottom: "-60%",
           backgroundImage: "url('/navo-live/backgrounds/waves.svg')",
-          backgroundSize: "110% auto",
+          backgroundSize: "120% 80%",
           backgroundRepeat: "no-repeat",
-          backgroundPosition: "center bottom",
+          backgroundPosition: "center 100%",
           opacity: 0.35,
-          transform: `translateY(${-parallaxSlow}px)`,
+          transform: `translateY(${parallaxSlow}px) scale(1.1)`,
           animation: prefersReducedMotion ? "none" : "wavesBack 20s ease-in-out infinite",
         }}
       />
 
-      {/* Camada frontal - mais rápida, mais opaca */}
+      {/* Camada frontal - mais visível */}
       <div
-        className="absolute inset-x-0"
+        className="absolute inset-0"
         style={{
-          height: "180%",
-          bottom: "-40%",
           backgroundImage: "url('/navo-live/backgrounds/waves.svg')",
-          backgroundSize: "100% auto",
+          backgroundSize: "100% 70%",
           backgroundRepeat: "no-repeat",
-          backgroundPosition: "center bottom",
-          opacity: 0.6,
-          transform: `translateY(${-parallaxFast}px)`,
+          backgroundPosition: "center 100%",
+          opacity: 0.55,
+          transform: `translateY(${parallaxFast}px)`,
           animation: prefersReducedMotion ? "none" : "wavesFront 14s ease-in-out infinite",
         }}
       />

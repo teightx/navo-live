@@ -36,6 +36,7 @@ export interface Messages {
     };
     apply: string;
     search: string;
+    swap: string;
   };
   results: {
     direct: string;
@@ -123,6 +124,7 @@ export const pt: Messages = {
     },
     apply: "aplicar",
     search: "buscar",
+    swap: "inverter origem e destino",
   },
   results: {
     direct: "direto",

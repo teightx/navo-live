@@ -45,6 +45,7 @@ export const en: Messages = {
     },
     apply: "apply",
     search: "search",
+    swap: "swap origin and destination",
   },
 
   // Results

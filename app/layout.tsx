@@ -63,6 +63,8 @@ export default function RootLayout({
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${dmSans.className} antialiased`}>
         <Providers>{children}</Providers>
+        {/* Portal root para modais e popovers - Camada 3: Overlays */}
+        <div id="overlay-root" />
       </body>
     </html>
   );

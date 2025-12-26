@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Popover } from "./Popover";
+import { useState, useEffect, RefObject } from "react";
+import { FloatingPopover } from "@/components/ui/FloatingPopover";
 import { useI18n } from "@/lib/i18n";
 import type { Pax, CabinClass } from "@/lib/types/search";
 import { cabinClasses, paxLimits } from "@/lib/mocks/searchConfig";
@@ -12,6 +12,7 @@ interface PaxClassPopoverProps {
   pax: Pax;
   cabinClass: CabinClass;
   onApply: (pax: Pax, cabinClass: CabinClass) => void;
+  triggerRef?: RefObject<HTMLElement | null>;
 }
 
 interface CounterProps {
@@ -78,6 +79,7 @@ export function PaxClassPopover({
   pax,
   cabinClass,
   onApply,
+  triggerRef,
 }: PaxClassPopoverProps) {
   const { t, locale } = useI18n();
   const [localPax, setLocalPax] = useState<Pax>(pax);
@@ -110,8 +112,15 @@ export function PaxClassPopover({
   }
 
   return (
-    <Popover isOpen={isOpen} onClose={onClose} align="right" className="w-[300px] p-4">
-      <div className="space-y-4">
+    <FloatingPopover
+      open={isOpen}
+      anchorRef={triggerRef!}
+      onClose={onClose}
+      placement="bottom-end"
+      className="w-[300px]"
+      maxHeight={420}
+    >
+      <div className="p-4 space-y-4">
         {/* Cabin class */}
         <div>
           <label 
@@ -204,6 +213,6 @@ export function PaxClassPopover({
           {t.search.apply}
         </button>
       </div>
-    </Popover>
+    </FloatingPopover>
   );
 }

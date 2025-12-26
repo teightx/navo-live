@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, ReactNode } from "react";
-import { Popover } from "./Popover";
+import { FloatingPopover } from "@/components/ui/FloatingPopover";
 import { airports, type Airport } from "@/lib/mocks/airports";
 
 interface AirportFieldProps {
@@ -25,6 +25,7 @@ export function AirportField({
   const [query, setQuery] = useState("");
   const [highlightIndex, setHighlightIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   const displayValue = value
@@ -99,10 +100,11 @@ export function AirportField({
   }
 
   function handleBlur() {
+    // Pequeno delay para permitir cliques no popover
     setTimeout(() => {
       setIsOpen(false);
       setQuery("");
-    }, 150);
+    }, 200);
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -111,7 +113,7 @@ export function AirportField({
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <div
         className={`
           w-full h-12 px-3
@@ -146,13 +148,15 @@ export function AirportField({
         </div>
       </div>
 
-      <Popover
-        isOpen={isOpen && suggestions.length > 0}
+      <FloatingPopover
+        open={isOpen && suggestions.length > 0}
+        anchorRef={containerRef}
         onClose={() => {
           setIsOpen(false);
           setQuery("");
         }}
-        className="w-full max-h-[280px] overflow-y-auto"
+        className="w-[280px]"
+        maxHeight={320}
       >
         <div ref={listRef} className="py-1">
           {suggestions.map((airport, index) => (
@@ -182,7 +186,7 @@ export function AirportField({
             </button>
           ))}
         </div>
-      </Popover>
+      </FloatingPopover>
     </div>
   );
 }

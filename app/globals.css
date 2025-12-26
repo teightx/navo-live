@@ -95,8 +95,35 @@
   75% { transform: translateY(-20px); }
 }
 
+/* Bottom sheet animation for mobile popovers */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.25s ease-out forwards;
+}
+
+/* Footer wave horizontal animation */
+@keyframes footerWave {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-footer-wave {
+  animation: footerWave 20s linear infinite;
+}
+
 html {
   scroll-behavior: smooth;
+  overflow-y: scroll; /* Evita shift horizontal quando modais abrem/fecham */
 }
 
 body {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ReactNode } from "react";
+import { useState, useRef, ReactNode } from "react";
 import { CalendarPopover } from "./CalendarPopover";
 import { useI18n } from "@/lib/i18n";
 
@@ -31,6 +31,7 @@ export function DateField({
   placeholder,
 }: DateFieldProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const { locale } = useI18n();
 
   const months = locale === "pt" ? MONTHS_PT : MONTHS_EN;
@@ -51,6 +52,7 @@ export function DateField({
   return (
     <div className="relative">
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => !disabled && setIsOpen(true)}
         disabled={disabled}
@@ -100,6 +102,7 @@ export function DateField({
         onApply={onApply}
         isRoundtrip={isRoundtrip}
         focusField={focusField}
+        triggerRef={buttonRef}
       />
     </div>
   );

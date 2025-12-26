@@ -1,8 +1,8 @@
 <svg width="1440" height="900" viewBox="0 0 1440 900" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
-  <!-- Onda azul suave -->
-  <path d="M0 350C200 320 400 400 600 360C800 320 1000 420 1200 370C1400 320 1440 380 1440 380V900H0V350Z" fill="#7fa6b3" fill-opacity="0.12"/>
-  <!-- Onda verde sutil -->
-  <path d="M0 500C240 460 480 540 720 490C960 440 1200 550 1440 500V900H0V500Z" fill="#9fb48a" fill-opacity="0.1"/>
-  <!-- Onda laranja quase invisível -->
-  <path d="M0 650C180 620 360 680 540 650C720 620 900 700 1080 660C1260 620 1440 680 1440 680V900H0V650Z" fill="#e07a3f" fill-opacity="0.06"/>
+  <!-- Onda azul suave - contraste aumentado -->
+  <path d="M0 350C200 320 400 400 600 360C800 320 1000 420 1200 370C1400 320 1440 380 1440 380V900H0V350Z" fill="#5c8a9c" fill-opacity="0.18"/>
+  <!-- Onda verde sutil - contraste aumentado -->
+  <path d="M0 500C240 460 480 540 720 490C960 440 1200 550 1440 500V900H0V500Z" fill="#7a9b6a" fill-opacity="0.16"/>
+  <!-- Onda laranja quase invisível - contraste aumentado -->
+  <path d="M0 650C180 620 360 680 540 650C720 620 900 700 1080 660C1260 620 1440 680 1440 680V900H0V650Z" fill="#d06a35" fill-opacity="0.10"/>
 </svg>

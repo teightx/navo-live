@@ -41,7 +41,7 @@ export function BackgroundWaves() {
   
   const isDark = mounted && resolvedTheme === "dark";
   
-  // Usa arquivo diferente para dark mode (se existir) ou aplica filtro
+  // Usa arquivo diferente para dark mode
   const wavesUrl = isDark ? "/backgrounds/waves-dark.svg" : "/backgrounds/waves.svg";
 
   return (
@@ -55,30 +55,40 @@ export function BackgroundWaves() {
         style={{ background: "var(--cream)" }}
       />
       
-      {/* Camada traseira */}
+      {/* Camada traseira - posicionada apenas na parte inferior */}
       <div
-        className="absolute inset-0 transition-opacity duration-300"
+        className="absolute transition-opacity duration-300"
         style={{
+          left: "-10%",
+          right: "-10%",
+          bottom: "-50px",
+          height: "70vh", // Apenas parte inferior da tela
           backgroundImage: `url('${wavesUrl}')`,
-          backgroundSize: "120% 80%",
+          backgroundSize: "120% 100%",
           backgroundRepeat: "no-repeat",
-          backgroundPosition: "center 100%",
+          backgroundPosition: "center bottom",
           opacity: isDark ? 0.4 : 0.55,
           transform: `translateY(${parallaxSlow}px) scale(1.1)`,
+          transformOrigin: "center bottom",
           animation: prefersReducedMotion ? "none" : "wavesBack 20s ease-in-out infinite",
         }}
       />
 
-      {/* Camada frontal */}
+      {/* Camada frontal - posicionada apenas na parte inferior */}
       <div
-        className="absolute inset-0 transition-opacity duration-300"
+        className="absolute transition-opacity duration-300"
         style={{
+          left: "-5%",
+          right: "-5%",
+          bottom: "-30px",
+          height: "60vh", // Apenas parte inferior da tela
           backgroundImage: `url('${wavesUrl}')`,
-          backgroundSize: "100% 70%",
+          backgroundSize: "110% 100%",
           backgroundRepeat: "no-repeat",
-          backgroundPosition: "center 100%",
+          backgroundPosition: "center bottom",
           opacity: isDark ? 0.6 : 0.75,
           transform: `translateY(${parallaxFast}px)`,
+          transformOrigin: "center bottom",
           animation: prefersReducedMotion ? "none" : "wavesFront 14s ease-in-out infinite",
         }}
       />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { SwapButton } from "./SwapButton";
 import { AirportField } from "./AirportField";
@@ -124,6 +124,7 @@ export function SearchBar({ initialState, onSearch, mode = "default" }: SearchBa
 
   const [state, setState] = useState<SearchState>(mergedInitialState);
   const [paxOpen, setPaxOpen] = useState(false);
+  const paxButtonRef = useRef<HTMLButtonElement>(null);
 
   function handleTripTypeChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const tripType = e.target.value as TripType;
@@ -215,8 +216,10 @@ export function SearchBar({ initialState, onSearch, mode = "default" }: SearchBa
         }}
       >
         {/* Row 1: Origin + Destination */}
-        <div className="flex items-center gap-2 mb-4">
-          <div className="flex-1">
+        {/* Layout unificado: campos com swap flutuante no centro */}
+        <div className="relative mb-4">
+          {/* Layout Mobile: campos empilhados */}
+          <div className="sm:hidden flex flex-col gap-2">
             <AirportField
               label={t.search.from}
               icon={<PlaneDepartIcon className="text-ink-muted" />}
@@ -225,11 +228,36 @@ export function SearchBar({ initialState, onSearch, mode = "default" }: SearchBa
               exclude={state.to?.code}
               placeholder={t.search.origin}
             />
+            
+            <AirportField
+              label={t.search.to}
+              icon={<MapPinIcon className="text-ink-muted" />}
+              value={state.to}
+              onChange={handleToChange}
+              exclude={state.from?.code}
+              placeholder={t.search.destination}
+            />
+            
+            {/* Swap button mobile - direita */}
+            <div className="absolute z-10 top-1/2 -translate-y-1/2 right-3">
+              <SwapButton onClick={handleSwap} />
+            </div>
           </div>
+          
+          {/* Layout Desktop: campos lado a lado com swap no centro */}
+          <div className="hidden sm:grid sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:gap-2">
+            <AirportField
+              label={t.search.from}
+              icon={<PlaneDepartIcon className="text-ink-muted" />}
+              value={state.from}
+              onChange={handleFromChange}
+              exclude={state.to?.code}
+              placeholder={t.search.origin}
+            />
 
-          <SwapButton onClick={handleSwap} />
+            {/* Swap button desktop - centro */}
+            <SwapButton onClick={handleSwap} />
 
-          <div className="flex-1">
             <AirportField
               label={t.search.to}
               icon={<MapPinIcon className="text-ink-muted" />}
@@ -269,6 +297,7 @@ export function SearchBar({ initialState, onSearch, mode = "default" }: SearchBa
           {/* Travelers */}
           <div className="relative col-span-2 sm:col-span-1">
             <button
+              ref={paxButtonRef}
               type="button"
               onClick={() => setPaxOpen(true)}
               className={`
@@ -300,6 +329,7 @@ export function SearchBar({ initialState, onSearch, mode = "default" }: SearchBa
               pax={state.pax}
               cabinClass={state.cabinClass}
               onApply={handlePaxApply}
+              triggerRef={paxButtonRef}
             />
           </div>
 

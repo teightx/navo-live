@@ -1,12 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "export",
-  images: {
-    unoptimized: true,
-  },
-  basePath: "/navo-live",
-  assetPrefix: "/navo-live/",
+  // Configuração padrão para Vercel (SSR/Serverless)
 };
 
 export default nextConfig;

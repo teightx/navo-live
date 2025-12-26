@@ -51,7 +51,7 @@ export function BackgroundWaves() {
       <div
         className="absolute inset-0"
         style={{
-          backgroundImage: "url('/navo-live/backgrounds/waves.svg')",
+          backgroundImage: "url('/backgrounds/waves.svg')",
           backgroundSize: "120% 80%",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center 100%",
@@ -65,7 +65,7 @@ export function BackgroundWaves() {
       <div
         className="absolute inset-0"
         style={{
-          backgroundImage: "url('/navo-live/backgrounds/waves.svg')",
+          backgroundImage: "url('/backgrounds/waves.svg')",
           backgroundSize: "100% 70%",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center 100%",

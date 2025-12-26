@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Header, Footer } from "@/components/layout";
 import { BackgroundWaves } from "@/components/ui";
 import { SearchBar } from "@/components/searchbar";
@@ -39,12 +40,17 @@ const MOCK_FLIGHTS = [
 ];
 
 export default function Home() {
+  const router = useRouter();
   const { t, locale } = useI18n();
   const [showResults, setShowResults] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>("best");
 
   function handleSearch() {
     setShowResults(true);
+  }
+
+  function handleFlightClick(flightId: string) {
+    router.push(`/voos/flight-${flightId}`);
   }
 
   // Ordenar voos baseado no filtro
@@ -98,7 +104,8 @@ export default function Home() {
                 {sortedFlights.map((flight, index) => (
                   <div
                     key={flight.id}
-                    className="p-4 rounded-xl border transition-all duration-150 hover:shadow-md"
+                    onClick={() => handleFlightClick(flight.id)}
+                    className="p-4 rounded-xl border transition-all duration-150 hover:shadow-md cursor-pointer"
                     style={{
                       background: "var(--card-bg)",
                       borderColor: index === 0 ? "var(--blue)" : "var(--card-border)",

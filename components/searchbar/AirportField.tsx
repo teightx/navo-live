@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, ReactNode } from "react";
 import { Popover } from "./Popover";
 import { airports, type Airport } from "@/lib/mocks/airports";
 
 interface AirportFieldProps {
   label: string;
+  icon?: ReactNode;
   value: Airport | null;
   onChange: (airport: Airport) => void;
   exclude?: string | null;
@@ -14,6 +15,7 @@ interface AirportFieldProps {
 
 export function AirportField({
   label,
+  icon,
   value,
   onChange,
   exclude,
@@ -33,7 +35,7 @@ export function AirportField({
   // Filtra aeroportos
   const filtered = airports.filter((airport) => {
     if (exclude && airport.code === exclude) return false;
-    if (!query) return true; // Mostra todos se não há query
+    if (!query) return true;
     const q = query.toLowerCase();
     return (
       airport.city.toLowerCase().includes(q) ||
@@ -58,16 +60,13 @@ export function AirportField({
     }
   }, [highlightIndex, isOpen]);
 
-  const handleSelect = useCallback(
-    (airport: Airport) => {
-      onChange(airport);
-      setQuery("");
-      setIsOpen(false);
-    },
-    [onChange]
-  );
+  function handleSelect(airport: Airport) {
+    onChange(airport);
+    setQuery("");
+    setIsOpen(false);
+  }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  function handleKeyDown(e: React.KeyboardEvent) {
     if (!isOpen) {
       if (e.key === "ArrowDown" || e.key === "Enter") {
         setIsOpen(true);
@@ -97,60 +96,64 @@ export function AirportField({
         setQuery("");
         break;
     }
-  };
+  }
 
-  const handleFocus = () => {
+  function handleFocus() {
     setIsOpen(true);
     setQuery("");
-  };
+  }
 
-  const handleBlur = () => {
-    // Delay para permitir clique nos itens
+  function handleBlur() {
     setTimeout(() => {
       setIsOpen(false);
       setQuery("");
     }, 150);
-  };
+  }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setQuery(e.target.value);
     if (!isOpen) setIsOpen(true);
-  };
+  }
 
   return (
-    <div className="relative flex-1">
+    <div className="relative">
       {/* Campo */}
       <div
         className={`
-          w-full px-4 py-3
-          bg-cream/60 border rounded-xl
+          w-full h-14 px-4
+          bg-cream/80 border rounded-xl
+          flex items-center gap-3
           transition-all duration-150
           ${isOpen
-            ? "border-blue-soft bg-cream ring-1 ring-blue-soft/30"
-            : "border-cream-dark/60 hover:border-cream-dark hover:bg-cream/80"
+            ? "border-blue ring-2 ring-blue/20"
+            : "border-ink/10 hover:border-ink/20 hover:bg-cream"
           }
         `}
       >
-        <label className="block text-[10px] uppercase tracking-wider text-ink-muted mb-0.5">
-          {label}
-        </label>
-        <input
-          ref={inputRef}
-          type="text"
-          value={isOpen ? query : displayValue}
-          onChange={handleChange}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          autoComplete="off"
-          className={`
-            w-full bg-transparent border-none p-0
-            text-sm outline-none
-            placeholder:text-ink-muted
-            ${displayValue && !isOpen ? "font-medium text-ink" : "text-ink"}
-          `}
-        />
+        {icon && <div className="flex-shrink-0">{icon}</div>}
+        
+        <div className="flex-1 min-w-0">
+          <label className="block text-[10px] uppercase tracking-wider text-ink-muted">
+            {label}
+          </label>
+          <input
+            ref={inputRef}
+            type="text"
+            value={isOpen ? query : displayValue}
+            onChange={handleChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            autoComplete="off"
+            className={`
+              w-full bg-transparent border-none p-0
+              text-sm outline-none
+              placeholder:text-ink-muted
+              ${displayValue && !isOpen ? "font-medium text-ink" : "text-ink"}
+            `}
+          />
+        </div>
       </div>
 
       {/* Popover com lista */}
@@ -160,7 +163,7 @@ export function AirportField({
           setIsOpen(false);
           setQuery("");
         }}
-        className="w-full max-h-[280px] overflow-y-auto"
+        className="w-full max-h-[300px] overflow-y-auto"
       >
         <div ref={listRef} className="py-1">
           {suggestions.map((airport, index) => (
@@ -171,7 +174,7 @@ export function AirportField({
               onClick={() => handleSelect(airport)}
               onMouseEnter={() => setHighlightIndex(index)}
               className={`
-                w-full px-4 py-2.5 text-left
+                w-full px-4 py-3 text-left
                 transition-colors duration-75
                 ${index === highlightIndex
                   ? "bg-cream"
@@ -180,10 +183,10 @@ export function AirportField({
               `}
             >
               <div className="flex items-baseline justify-between gap-2">
-                <span className="text-sm text-ink">
+                <span className="text-sm text-ink font-medium">
                   {airport.city.toLowerCase()}
                 </span>
-                <span className="text-xs font-medium text-blue">
+                <span className="text-xs font-semibold text-blue">
                   {airport.code}
                 </span>
               </div>
@@ -197,4 +200,3 @@ export function AirportField({
     </div>
   );
 }
-

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, ReactNode } from "react";
 import { CalendarPopover } from "./CalendarPopover";
 
 interface DateFieldProps {
   label: string;
+  icon?: ReactNode;
   departDate: string | null;
   returnDate: string | null;
   onApply: (depart: string | null, returnD: string | null) => void;
@@ -26,6 +27,7 @@ function formatDateDisplay(date: string | null): string {
 
 export function DateField({
   label,
+  icon,
   departDate,
   returnDate,
   onApply,
@@ -50,25 +52,39 @@ export function DateField({
         onClick={() => !disabled && setIsOpen(true)}
         disabled={disabled}
         className={`
-          w-full px-4 py-3 text-left
-          bg-cream/60 border rounded-xl
+          w-full h-14 px-4 text-left
+          bg-cream/80 border rounded-xl
+          flex items-center gap-3
           transition-all duration-150
           ${isOpen
-            ? "border-blue-soft bg-cream ring-1 ring-blue-soft/30"
-            : "border-cream-dark/60 hover:border-cream-dark hover:bg-cream/80"
+            ? "border-blue ring-2 ring-blue/20"
+            : disabled
+              ? "border-ink/5 bg-cream-dark/30 cursor-not-allowed"
+              : "border-ink/10 hover:border-ink/20 hover:bg-cream cursor-pointer"
           }
-          ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
         `}
       >
-        <div className="text-[10px] uppercase tracking-wider text-ink-muted mb-0.5">
-          {label}
-        </div>
-        <div
-          className={`text-sm truncate ${
-            displayValue ? "font-medium text-ink" : "text-ink-muted"
-          }`}
-        >
-          {displayValue || placeholder}
+        {icon && (
+          <div className={`flex-shrink-0 ${disabled ? "opacity-40" : ""}`}>
+            {icon}
+          </div>
+        )}
+        
+        <div className="flex-1 min-w-0">
+          <div className={`text-[10px] uppercase tracking-wider ${disabled ? "text-ink-muted/50" : "text-ink-muted"}`}>
+            {label}
+          </div>
+          <div
+            className={`text-sm truncate ${
+              disabled 
+                ? "text-ink-muted/50" 
+                : displayValue 
+                  ? "font-medium text-ink" 
+                  : "text-ink-muted"
+            }`}
+          >
+            {displayValue || placeholder}
+          </div>
         </div>
       </button>
 
@@ -85,4 +101,3 @@ export function DateField({
     </div>
   );
 }
-

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Segment } from "./Segment";
 import { SwapButton } from "./SwapButton";
 import { TripTypeSelect } from "./TripTypeSelect";
 import { AirportField } from "./AirportField";
@@ -31,6 +30,60 @@ function formatPaxSummary(pax: Pax, cabin: CabinClass): string {
   }
   
   return `${parts.join(", ")}, ${cabinClassLabels[cabin]}`;
+}
+
+// Ícones SVG
+function PlaneIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path 
+        d="M14 4L9 8L14 12M2 8H9M5 5L2 8L5 11" 
+        stroke="currentColor" 
+        strokeWidth="1.2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function MapPinIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path 
+        d="M8 8.5C9.10457 8.5 10 7.60457 10 6.5C10 5.39543 9.10457 4.5 8 4.5C6.89543 4.5 6 5.39543 6 6.5C6 7.60457 6.89543 8.5 8 8.5Z" 
+        stroke="currentColor" 
+        strokeWidth="1.2"
+      />
+      <path 
+        d="M8 14C8 14 13 10 13 6.5C13 3.73858 10.7614 1.5 8 1.5C5.23858 1.5 3 3.73858 3 6.5C3 10 8 14 8 14Z" 
+        stroke="currentColor" 
+        strokeWidth="1.2"
+      />
+    </svg>
+  );
+}
+
+function CalendarIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" strokeWidth="1.2"/>
+      <path d="M2 6H14" stroke="currentColor" strokeWidth="1.2"/>
+      <path d="M5 1.5V3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      <path d="M11 1.5V3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function UsersIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <circle cx="6" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.2"/>
+      <path d="M1 14C1 11.2386 3.23858 9 6 9C8.76142 9 11 11.2386 11 14" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      <circle cx="11" cy="5.5" r="2" stroke="currentColor" strokeWidth="1.2"/>
+      <path d="M12 9C13.6569 9.5 15 11.067 15 13" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+    </svg>
+  );
 }
 
 export function SearchBar() {
@@ -98,36 +151,51 @@ export function SearchBar() {
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      <div className="bg-cream-soft/95 backdrop-blur-sm border border-cream-dark/50 rounded-2xl p-5 sm:p-6 shadow-sm shadow-ink/5">
-        {/* Linha 1: Origem + Swap + Destino + Ida + Volta */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+      {/* Card principal com sombra e bordas arredondadas */}
+      <div 
+        className="bg-cream-soft border border-cream-dark/40 rounded-2xl p-6 sm:p-8"
+        style={{
+          boxShadow: "0px 10px 30px rgba(0, 0, 0, 0.06), 0px 4px 8px rgba(0, 0, 0, 0.04)",
+        }}
+      >
+        {/* LINHA 1: Para onde (origem + destino) */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
           {/* Origem */}
-          <AirportField
-            label="de"
-            value={state.from}
-            onChange={handleFromChange}
-            exclude={state.to?.code}
-            placeholder="origem"
-          />
+          <div className="flex-1">
+            <AirportField
+              label="de"
+              icon={<PlaneIcon className="text-ink-muted" />}
+              value={state.from}
+              onChange={handleFromChange}
+              exclude={state.to?.code}
+              placeholder="origem"
+            />
+          </div>
 
           {/* Botão Swap */}
-          <div className="hidden sm:flex items-center justify-center flex-shrink-0">
+          <div className="hidden sm:flex items-center justify-center">
             <SwapButton onClick={handleSwap} />
           </div>
 
           {/* Destino */}
-          <AirportField
-            label="para"
-            value={state.to}
-            onChange={handleToChange}
-            exclude={state.from?.code}
-            placeholder="destino"
-          />
+          <div className="flex-1">
+            <AirportField
+              label="para"
+              icon={<MapPinIcon className="text-ink-muted" />}
+              value={state.to}
+              onChange={handleToChange}
+              exclude={state.from?.code}
+              placeholder="destino"
+            />
+          </div>
+        </div>
 
-          {/* Ida */}
-          <div className="sm:w-[130px] flex-shrink-0">
+        {/* LINHA 2: Quando (datas) */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-5">
+          <div className="flex-1">
             <DateField
               label="ida"
+              icon={<CalendarIcon className="text-ink-muted" />}
               departDate={state.departDate}
               returnDate={state.returnDate}
               onApply={handleDatesApply}
@@ -136,10 +204,10 @@ export function SearchBar() {
             />
           </div>
 
-          {/* Volta */}
-          <div className="sm:w-[130px] flex-shrink-0">
+          <div className="flex-1">
             <DateField
               label="volta"
+              icon={<CalendarIcon className="text-ink-muted" />}
               departDate={state.departDate}
               returnDate={state.returnDate}
               onApply={handleDatesApply}
@@ -150,7 +218,7 @@ export function SearchBar() {
           </div>
         </div>
 
-        {/* Linha 2: TripType + Viajantes + Buscar */}
+        {/* LINHA 3: Quem + Buscar */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           {/* TripType Select */}
           <TripTypeSelect
@@ -159,39 +227,56 @@ export function SearchBar() {
           />
 
           {/* Viajantes e classe */}
-          <div className="relative flex-1 sm:max-w-[300px]">
-            <Segment
-              label="viajantes"
-              value={formatPaxSummary(state.pax, state.cabinClass)}
+          <div className="relative flex-1">
+            <button
+              type="button"
               onClick={() => setPaxOpen(true)}
-              isActive={paxOpen}
-              filled
+              className={`
+                w-full h-14 px-4 text-left
+                bg-cream/80 border rounded-xl
+                flex items-center gap-3
+                transition-all duration-150
+                ${paxOpen
+                  ? "border-blue ring-2 ring-blue/20"
+                  : "border-ink/10 hover:border-ink/20 hover:bg-cream"
+                }
+              `}
             >
-              <PaxClassPopover
-                isOpen={paxOpen}
-                onClose={() => setPaxOpen(false)}
-                pax={state.pax}
-                cabinClass={state.cabinClass}
-                onApply={handlePaxApply}
-              />
-            </Segment>
+              <UsersIcon className="text-ink-muted flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] uppercase tracking-wider text-ink-muted">
+                  viajantes
+                </div>
+                <div className="text-sm font-medium text-ink truncate">
+                  {formatPaxSummary(state.pax, state.cabinClass)}
+                </div>
+              </div>
+            </button>
+            
+            <PaxClassPopover
+              isOpen={paxOpen}
+              onClose={() => setPaxOpen(false)}
+              pax={state.pax}
+              cabinClass={state.cabinClass}
+              onApply={handlePaxApply}
+            />
           </div>
 
-          {/* Espaçador */}
-          <div className="hidden sm:block flex-1" />
+          {/* Espaçador desktop */}
+          <div className="hidden sm:block flex-1 max-w-[100px]" />
 
-          {/* Botão buscar */}
+          {/* Botão buscar - destaque principal */}
           <button
             type="button"
             onClick={handleSubmit}
             disabled={!isValid}
             className={`
-              h-12 px-10 rounded-full
-              text-sm font-medium lowercase
-              transition-all duration-150
+              h-14 px-10 rounded-xl
+              text-base font-semibold uppercase tracking-wide
+              transition-all duration-200
               ${isValid
-                ? "bg-blue text-cream-soft hover:bg-blue-soft shadow-sm shadow-blue/20 cursor-pointer"
-                : "bg-cream-dark/80 text-ink-muted cursor-not-allowed"
+                ? "bg-blue text-cream-soft hover:bg-blue-soft shadow-md shadow-blue/25 hover:shadow-lg hover:shadow-blue/30 cursor-pointer"
+                : "bg-cream-dark text-ink-muted cursor-not-allowed"
               }
             `}
           >

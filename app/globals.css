@@ -26,6 +26,7 @@
 /* Light mode (default) */
 :root {
   --cream: #fcf2ed;
+  --cream-rgb: 252, 242, 237;
   --cream-dark: #f0e4dd;
   --cream-soft: #fff8f5;
 
@@ -57,6 +58,7 @@
 /* Dark mode */
 :root.dark {
   --cream: #1a1a1f;
+  --cream-rgb: 26, 26, 31;
   --cream-dark: #252529;
   --cream-soft: #0f0f12;
 

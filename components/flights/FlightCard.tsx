@@ -27,62 +27,40 @@ export function FlightCard({ flight, onClick, isBestOffer = false, bestOfferInfo
   const priceInsight = flight.priceInsight;
   
   return (
-    <div
-      onClick={onClick}
-      className="group cursor-pointer rounded-xl border backdrop-blur-sm hover:border-blue-soft hover:shadow-lg transition-all duration-200"
-      style={{
-        background: "var(--card-bg)",
-        borderColor: "var(--card-border)",
-      }}
-    >
-      {/* Header contextual */}
-      {(flight.co2 || (isBestOffer && bestOfferInfo)) && (
-        <div className="flex items-center justify-between rounded-t-xl">
-          {flight.co2 && (
-            <div className={`px-4 py-2 text-xs font-medium ${
-              flight.co2.startsWith("-") 
-                ? "bg-sage/10 text-sage" 
-                : "bg-accent/10 text-accent"
-            }`}>
-              {flight.co2}
-            </div>
-          )}
+    <div className="relative">
+      {/* Badge "melhor oferta" - overlay absolute */}
+      {isBestOffer && bestOfferInfo && (
+        <div className="absolute -top-2 right-3 z-10">
+          <div
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium cursor-help shadow-md"
+            style={{
+              background: "var(--blue)",
+              color: "var(--cream-soft)",
+            }}
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M6 1L7.5 4.5L11 6L7.5 7.5L6 11L4.5 7.5L1 6L4.5 4.5L6 1Z" fill="currentColor"/>
+            </svg>
+            <span>{t.results.bestOffer}</span>
+          </div>
           
-          {/* Badge "melhor oferta" */}
-          {isBestOffer && bestOfferInfo && (
-            <div className="relative px-4 py-2 ml-auto">
-              <div
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium cursor-help"
-                style={{
-                  background: "var(--blue)",
-                  color: "var(--cream-soft)",
-                }}
-                onMouseEnter={() => setShowTooltip(true)}
-                onMouseLeave={() => setShowTooltip(false)}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M6 1L7.5 4.5L11 6L7.5 7.5L6 11L4.5 7.5L1 6L4.5 4.5L6 1Z" fill="currentColor"/>
-                </svg>
-                <span>{t.results.bestOffer}</span>
-              </div>
-              
-              {/* Tooltip explicativo */}
-              {showTooltip && (
-                <div
-                  className="absolute right-0 top-full mt-2 z-50 px-3 py-2 rounded-lg text-xs max-w-[200px] shadow-lg pointer-events-none"
-                  style={{
-                    background: "var(--card-bg)",
-                    border: "1px solid var(--card-border)",
-                    color: "var(--ink)",
-                  }}
-                >
-                  <div className="font-medium mb-1">{bestOfferInfo.explanation}</div>
-                  {bestOfferInfo.priceDifference > 0 && (
-                    <div className="text-ink-muted">
-                      {t.results.cheaperThanAverage.replace("{amount}", formatPrice(bestOfferInfo.priceDifference))}
-                    </div>
-                  )}
+          {/* Tooltip explicativo */}
+          {showTooltip && (
+            <div
+              className="absolute right-0 top-full mt-2 z-50 px-3 py-2 rounded-lg text-xs max-w-[200px] shadow-lg pointer-events-none"
+              style={{
+                background: "var(--popover-bg)",
+                border: "1px solid var(--card-border)",
+                color: "var(--ink)",
+              }}
+            >
+              <div className="font-medium mb-1">{bestOfferInfo.explanation}</div>
+              {bestOfferInfo.priceDifference > 0 && (
+                <div className="text-ink-muted">
+                  {t.results.cheaperThanAverage.replace("{amount}", formatPrice(bestOfferInfo.priceDifference))}
                 </div>
               )}
             </div>
@@ -90,8 +68,34 @@ export function FlightCard({ flight, onClick, isBestOffer = false, bestOfferInfo
         </div>
       )}
 
-      {/* Corpo principal */}
-      <div className="p-4 sm:p-5">
+      {/* Card principal */}
+      <div
+        onClick={onClick}
+        className={`group cursor-pointer rounded-xl border backdrop-blur-sm transition-all duration-200 ${
+          isBestOffer 
+            ? "border-blue shadow-[0_0_0_1px_var(--blue),0_4px_20px_rgba(79,115,134,0.15)]" 
+            : "hover:border-blue-soft hover:shadow-lg"
+        }`}
+        style={{
+          background: "var(--card-bg)",
+          borderColor: isBestOffer ? "var(--blue)" : "var(--card-border)",
+        }}
+      >
+        {/* CO2 badge - header contextual só aparece quando há CO2 */}
+        {flight.co2 && (
+          <div className="flex items-center rounded-t-xl">
+            <div className={`px-4 py-2 text-xs font-medium rounded-tl-xl ${
+              flight.co2.startsWith("-") 
+                ? "bg-sage/10 text-sage" 
+                : "bg-accent/10 text-accent"
+            }`}>
+              {flight.co2}
+            </div>
+          </div>
+        )}
+
+        {/* Corpo principal */}
+        <div className="p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           
           {/* Coluna 1: Companhia */}
@@ -200,6 +204,7 @@ export function FlightCard({ flight, onClick, isBestOffer = false, bestOfferInfo
             </button>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

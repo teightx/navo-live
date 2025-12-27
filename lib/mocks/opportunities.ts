@@ -1,4 +1,9 @@
 /**
+ * @deprecated This file is no longer used.
+ * Popular routes now use real data from lib/routes/popular.ts
+ * This file is kept for reference only and can be deleted.
+ *
+ * Old description:
  * Mock data para "Oportunidades agora"
  * Destinos com preços promocionais derivados dos mocks de voos
  */

@@ -503,13 +503,7 @@ function ResultsContent() {
       <BackgroundWaves />
       
       <div className="min-h-screen relative">
-        <header 
-          className="sticky top-0 z-50 backdrop-blur-sm border-b"
-          style={{
-            background: "var(--card-bg)",
-            borderColor: "var(--card-border)",
-          }}
-        >
+        <header className="sticky top-0 z-50 bg-cream/80 dark:bg-cream/90 backdrop-blur-md border-b border-cream-dark/20">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-2">
@@ -528,86 +522,12 @@ function ResultsContent() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleEditSearch}
-                    className="text-sm text-blue hover:text-blue-soft transition-colors lowercase"
-                  >
-                    {t.results.edit}
-                  </button>
-
-                  {/* Botão Salvar Busca */}
-                  <button
-                    onClick={handleSaveSearch}
-                    disabled={saveStatus === "saving" || saveStatus === "removing"}
-                    className="text-sm lowercase transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{
-                      color: isSaved ? "var(--sage)" : "var(--blue)",
-                    }}
-                  >
-                    {saveStatus === "saving" ? (
-                      <>
-                        <svg
-                          className="animate-spin"
-                          width="14"
-                          height="14"
-                          viewBox="0 0 14 14"
-                          fill="none"
-                        >
-                          <circle
-                            cx="7"
-                            cy="7"
-                            r="6"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeDasharray="31.416"
-                            strokeDashoffset="23.562"
-                          />
-                        </svg>
-                        <span>{t.results.saving}</span>
-                      </>
-                    ) : saveStatus === "saved" ? (
-                      <>
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <path
-                            d="M11.5 3.5L5.5 9.5L2.5 6.5"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                        <span>{t.results.searchSaved}</span>
-                      </>
-                    ) : isSaved ? (
-                      <>
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <path
-                            d="M11.5 3.5L5.5 9.5L2.5 6.5"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                        <span>{t.results.removeSearch}</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <path
-                            d="M7 2.5V11.5M2.5 7H11.5"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                        <span>{t.results.saveSearch}</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+                <button
+                  onClick={handleEditSearch}
+                  className="text-sm text-blue hover:text-blue-soft transition-colors lowercase"
+                >
+                  {t.results.edit}
+                </button>
 
                 <div className="hidden sm:flex items-center gap-1 ml-2">
                   <LanguageToggle />
@@ -664,7 +584,7 @@ function ResultsContent() {
           ) : sortedResults.length === 0 ? (
             <EmptyState onEditSearch={handleEditSearch} />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {sortedResults.map((flight) => {
                 // Verificar se este voo é a melhor oferta (comparando por ID)
                 const isBestOffer = bestOfferFlightId === flight.id;
@@ -676,20 +596,13 @@ function ResultsContent() {
                   : null;
                 
                 return (
-                  <div
+                  <FlightCard 
                     key={flight.id}
-                    style={{
-                      borderColor: isBestOffer ? "var(--blue)" : undefined,
-                      boxShadow: isBestOffer ? "0 0 0 1px var(--blue)" : undefined,
-                    }}
-                  >
-                    <FlightCard 
-                      flight={flight} 
-                      onClick={() => handleFlightClick(flight)}
-                      isBestOffer={isBestOffer}
-                      bestOfferInfo={bestOfferInfo}
-                    />
-                  </div>
+                    flight={flight} 
+                    onClick={() => handleFlightClick(flight)}
+                    isBestOffer={isBestOffer}
+                    bestOfferInfo={bestOfferInfo}
+                  />
                 );
               })}
             </div>

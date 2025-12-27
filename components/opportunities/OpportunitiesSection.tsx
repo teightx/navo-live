@@ -1,32 +1,144 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
-import { OPPORTUNITIES, type Opportunity } from "@/lib/mocks/opportunities";
-import { formatPrice } from "@/lib/mocks/flights";
 import { serializeSearchState } from "@/lib/utils/searchParams";
 import { defaultSearchState } from "@/lib/types/search";
 import { getAirportByCode } from "@/lib/airports";
+import { findNearestAirport, getAllAirports, type AirportLocation } from "@/lib/geo/nearestAirport";
 
-// Feature flag: set to true when real price monitoring is implemented
-const SHOW_OPPORTUNITIES = true;
-const HAS_REAL_PRICE_HISTORY = false;
+// ============================================================================
+// Feature Flag
+// ============================================================================
 
-interface OpportunityCardProps {
-  opportunity: Opportunity;
+const SMART_ROUTES_ENABLED =
+  process.env.NEXT_PUBLIC_SMART_ROUTES !== "false"; // Default: true
+
+// ============================================================================
+// Types
+// ============================================================================
+
+// Simple mode types (current)
+interface PopularRouteCard {
+  id: string;
+  from: string;
+  to: string;
+  title: string;
+  subtitle: string;
+  routeLabel: string;
+  price?: number;
+  sampleCount: number;
+  lastUpdated?: string;
+  hasReliableData: boolean;
+}
+
+interface PopularApiResponse {
+  routes: PopularRouteCard[];
+  meta: {
+    fetchedAt: string;
+    minSamplesRequired: number;
+  };
+  requestId: string;
+}
+
+// Smart mode types (new)
+interface SmartRouteCard {
+  id: string;
+  from: string;
+  fromCity: string;
+  to: string;
+  toCity: string;
+  toCountry: string;
+  holidayName: string;
+  holidayKey: string;
+  departDate: string;
+  returnDate: string;
+  tripDays: number;
+  price?: number;
+  sampleCount: number;
+  hasReliableData: boolean;
+}
+
+interface SmartApiResponse {
+  routes: SmartRouteCard[];
+  origin: {
+    code: string;
+    city: string;
+  };
+  holidays: {
+    key: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+  }[];
+  meta: {
+    fetchedAt: string;
+    minSamplesRequired: number;
+  };
+  requestId: string;
+}
+
+// ============================================================================
+// LocalStorage Keys
+// ============================================================================
+
+const LAST_ORIGIN_KEY = "navo_last_origin";
+
+function getLastOrigin(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(LAST_ORIGIN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function setLastOrigin(code: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(LAST_ORIGIN_KEY, code.toUpperCase());
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+// ============================================================================
+// Utility
+// ============================================================================
+
+function formatPrice(price: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(price);
+}
+
+function formatShortDate(dateStr: string, locale: string): string {
+  const date = new Date(dateStr + "T12:00:00");
+  return date.toLocaleDateString(locale === "pt" ? "pt-BR" : "en-US", {
+    day: "numeric",
+    month: "short",
+  }).replace(".", "");
+}
+
+// ============================================================================
+// Simple Mode Components (existing behavior)
+// ============================================================================
+
+interface SimpleRouteCardProps {
+  route: PopularRouteCard;
   onClick: () => void;
 }
 
-function OpportunityCard({ opportunity, onClick }: OpportunityCardProps) {
-  const { t, locale } = useI18n();
-  
-  // When we have real price history, show actual badges
-  // For now, show a neutral "popular route" badge
-  const badgeText = HAS_REAL_PRICE_HISTORY
-    ? (opportunity.badge === "below_average"
-        ? (locale === "pt" ? "abaixo da média" : "below average")
-        : (locale === "pt" ? "menor preço recente" : "lowest recent price"))
-    : (locale === "pt" ? "rota popular" : "popular route");
+function SimpleRouteCard({ route, onClick }: SimpleRouteCardProps) {
+  const { locale } = useI18n();
+
+  const badgeText = locale === "pt" ? "rota popular" : "popular route";
+  const fromText = locale === "pt" ? "a partir de" : "from";
+  const viewFlightsText = locale === "pt" ? "ver voos" : "view flights";
 
   return (
     <button
@@ -38,51 +150,50 @@ function OpportunityCard({ opportunity, onClick }: OpportunityCardProps) {
       }}
     >
       <div className="p-4">
-        {/* Header: Badge e Destino */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
             <div className="text-sm font-medium text-ink capitalize mb-1">
-              {opportunity.destination.city}
+              {route.title}
             </div>
             <div className="text-xs text-ink-muted capitalize">
-              {opportunity.destination.country}
+              {route.subtitle}
             </div>
           </div>
-          
-          {opportunity.badge && (
-            <div
-              className="px-2 py-0.5 rounded-full text-[10px] font-medium ml-2 flex-shrink-0"
-              style={{
-                background: "var(--sage)",
-                color: "var(--cream-soft)",
-                opacity: 0.9,
-              }}
-            >
-              {badgeText}
-            </div>
+
+          <div
+            className="px-2 py-0.5 rounded-full text-[10px] font-medium ml-2 flex-shrink-0"
+            style={{
+              background: "var(--sage)",
+              color: "var(--cream-soft)",
+              opacity: 0.9,
+            }}
+          >
+            {badgeText}
+          </div>
+        </div>
+
+        {/* Price - only show if we have data */}
+        <div className="flex items-baseline gap-2 mb-3 min-h-[28px]">
+          {route.price !== undefined && (
+            <>
+              <span className="text-xs text-ink-muted lowercase">{fromText}</span>
+              <span className="text-xl font-bold text-blue">
+                {formatPrice(route.price)}
+              </span>
+            </>
           )}
         </div>
 
-        {/* Preço */}
-        <div className="flex items-baseline gap-2 mb-3">
-          <span className="text-xs text-ink-muted lowercase">
-            {t.results.from}
-          </span>
-          <span className="text-xl font-bold text-blue">
-            {formatPrice(opportunity.price)}
-          </span>
-        </div>
-
-        {/* CTA */}
-        <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: "var(--cream-dark)" }}>
-          <span className="text-xs text-ink-muted lowercase">
-            {opportunity.origin.city} → {opportunity.destination.city}
-          </span>
+        <div
+          className="flex items-center justify-between pt-2 border-t"
+          style={{ borderColor: "var(--cream-dark)" }}
+        >
+          <span className="text-xs text-ink-muted lowercase">{route.routeLabel}</span>
           <span
             className="text-xs font-medium lowercase transition-colors group-hover:text-blue"
             style={{ color: "var(--ink)" }}
           >
-            {locale === "pt" ? "ver voos" : "view flights"}
+            {viewFlightsText}
             <svg
               width="12"
               height="12"
@@ -106,21 +217,285 @@ function OpportunityCard({ opportunity, onClick }: OpportunityCardProps) {
   );
 }
 
+// ============================================================================
+// Smart Mode Components (new holiday-based)
+// ============================================================================
+
+interface SmartRouteCardProps {
+  route: SmartRouteCard;
+  onClick: () => void;
+}
+
+function SmartRouteCardComponent({ route, onClick }: SmartRouteCardProps) {
+  const { locale } = useI18n();
+
+  const fromText = locale === "pt" ? "a partir de" : "from";
+  const viewFlightsText = locale === "pt" ? "ver voos" : "view flights";
+  const daysText = locale === "pt" ? "dias" : "days";
+
+  const dateRange = `${formatShortDate(route.departDate, locale)} – ${formatShortDate(route.returnDate, locale)}`;
+
+  return (
+    <button
+      onClick={onClick}
+      className="group w-full text-left rounded-xl border transition-all duration-200 hover:border-blue-soft hover:shadow-md"
+      style={{
+        background: "var(--card-bg)",
+        borderColor: "var(--card-border)",
+      }}
+    >
+      <div className="p-4">
+        {/* Header: Holiday badge + Destination */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1">
+            <div className="text-sm font-medium text-ink capitalize mb-1">
+              {route.toCity}
+            </div>
+            <div className="text-xs text-ink-muted capitalize">
+              {route.toCountry}
+            </div>
+          </div>
+
+          <div
+            className="px-2 py-0.5 rounded-full text-[10px] font-medium ml-2 flex-shrink-0"
+            style={{
+              background: "var(--blue)",
+              color: "var(--cream-soft)",
+            }}
+          >
+            {route.holidayName}
+          </div>
+        </div>
+
+        {/* Price - only show if we have data */}
+        <div className="flex items-baseline gap-2 mb-3 min-h-[28px]">
+          {route.price !== undefined && (
+            <>
+              <span className="text-xs text-ink-muted lowercase">{fromText}</span>
+              <span className="text-xl font-bold text-blue">
+                {formatPrice(route.price)}
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Dates + CTA */}
+        <div
+          className="flex items-center justify-between pt-2 border-t"
+          style={{ borderColor: "var(--cream-dark)" }}
+        >
+          <div className="text-xs text-ink-muted lowercase">
+            <span>{dateRange}</span>
+            <span className="mx-1">·</span>
+            <span>{route.tripDays} {daysText}</span>
+          </div>
+          <span
+            className="text-xs font-medium lowercase transition-colors group-hover:text-blue"
+            style={{ color: "var(--ink)" }}
+          >
+            {viewFlightsText}
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              className="inline-block ml-1"
+              style={{ color: "var(--ink-muted)" }}
+            >
+              <path
+                d="M4.5 9L7.5 6L4.5 3"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+// ============================================================================
+// Shared Components
+// ============================================================================
+
+function LoadingSkeleton() {
+  return (
+    <div
+      className="rounded-xl border animate-pulse"
+      style={{
+        background: "var(--card-bg)",
+        borderColor: "var(--card-border)",
+      }}
+    >
+      <div className="p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1">
+            <div
+              className="h-4 w-24 rounded mb-2"
+              style={{ background: "var(--cream-dark)" }}
+            />
+            <div
+              className="h-3 w-16 rounded"
+              style={{ background: "var(--cream-dark)" }}
+            />
+          </div>
+          <div
+            className="h-4 w-16 rounded-full"
+            style={{ background: "var(--cream-dark)" }}
+          />
+        </div>
+        <div
+          className="h-6 w-28 rounded mb-3"
+          style={{ background: "var(--cream-dark)" }}
+        />
+        <div
+          className="h-3 w-full rounded"
+          style={{ background: "var(--cream-dark)" }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Main Component
+// ============================================================================
+
 export function OpportunitiesSection() {
   const router = useRouter();
-  const { t, locale } = useI18n();
+  const { locale } = useI18n();
 
-  function handleOpportunityClick(opportunity: Opportunity) {
-    const originAirport = getAirportByCode(opportunity.origin.code);
-    const destinationAirport = getAirportByCode(opportunity.destination.code);
+  // State for simple mode
+  const [simpleRoutes, setSimpleRoutes] = useState<PopularRouteCard[]>([]);
+
+  // State for smart mode
+  const [smartRoutes, setSmartRoutes] = useState<SmartRouteCard[]>([]);
+  const [origin, setOrigin] = useState<{ code: string; city: string } | null>(null);
+  const [detectedOrigin, setDetectedOrigin] = useState<string | null>(null);
+  const [showOriginSelector, setShowOriginSelector] = useState(false);
+
+  // Shared state
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [geoLoading, setGeoLoading] = useState(true);
+
+  // Determine which mode to use
+  const isSmartMode = SMART_ROUTES_ENABLED;
+
+  // Detect user location on mount
+  useEffect(() => {
+    async function detectLocation() {
+      // First check localStorage
+      const savedOrigin = getLastOrigin();
+      if (savedOrigin) {
+        setDetectedOrigin(savedOrigin);
+        setGeoLoading(false);
+        return;
+      }
+
+      // Try geolocation
+      if (typeof navigator !== "undefined" && "geolocation" in navigator) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: false,
+              timeout: 5000,
+              maximumAge: 86400000, // 24h cache
+            });
+          });
+
+          const nearest = findNearestAirport({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude,
+          });
+
+          setDetectedOrigin(nearest.code);
+          setLastOrigin(nearest.code);
+        } catch {
+          // Fallback to GRU
+          setDetectedOrigin("GRU");
+        }
+      } else {
+        setDetectedOrigin("GRU");
+      }
+      setGeoLoading(false);
+    }
+
+    detectLocation();
+  }, []);
+
+  // Fetch routes when origin is detected
+  useEffect(() => {
+    if (geoLoading || !detectedOrigin) return;
+
+    async function fetchRoutes() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        if (isSmartMode) {
+          const res = await fetch(`/api/routes/smart-popular?from=${detectedOrigin}`);
+
+          if (!res.ok) {
+            throw new Error(`Failed to fetch: ${res.status}`);
+          }
+
+          const data: SmartApiResponse = await res.json();
+          setSmartRoutes(data.routes);
+          setOrigin(data.origin);
+        } else {
+          const res = await fetch("/api/routes/popular?limit=6", {
+            next: { revalidate: 300 },
+          });
+
+          if (!res.ok) {
+            throw new Error(`Failed to fetch: ${res.status}`);
+          }
+
+          const data: PopularApiResponse = await res.json();
+          setSimpleRoutes(data.routes);
+        }
+      } catch (err) {
+        console.error("Failed to fetch routes:", err);
+        setError(err instanceof Error ? err.message : "Unknown error");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchRoutes();
+  }, [isSmartMode, detectedOrigin, geoLoading]);
+
+  // Handle origin change
+  function handleOriginChange(newCode: string) {
+    setDetectedOrigin(newCode);
+    setLastOrigin(newCode);
+    setShowOriginSelector(false);
+  }
+
+  // Handle simple route click
+  function handleSimpleRouteClick(route: PopularRouteCard) {
+    const originAirport = getAirportByCode(route.from);
+    const destinationAirport = getAirportByCode(route.to);
 
     if (!originAirport || !destinationAirport) return;
+
+    // Use a date 30 days from now as default
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 30);
+    const departureDateStr = futureDate.toISOString().split("T")[0];
+
+    // Save origin for future smart mode
+    setLastOrigin(route.from);
 
     const searchState = {
       ...defaultSearchState,
       from: originAirport,
       to: destinationAirport,
-      departDate: opportunity.departureDate || null,
+      departDate: departureDateStr,
       tripType: "oneway" as const,
     };
 
@@ -128,52 +503,140 @@ export function OpportunitiesSection() {
     router.push(`/resultados?${queryString}`);
   }
 
-  // Hide section entirely if feature flag is off
-  if (!SHOW_OPPORTUNITIES) {
-    return null;
+  // Handle smart route click
+  function handleSmartRouteClick(route: SmartRouteCard) {
+    const originAirport = getAirportByCode(route.from);
+    const destinationAirport = getAirportByCode(route.to);
+
+    if (!originAirport || !destinationAirport) return;
+
+    // Save origin for future
+    setLastOrigin(route.from);
+
+    const searchState = {
+      ...defaultSearchState,
+      from: originAirport,
+      to: destinationAirport,
+      departDate: route.departDate,
+      returnDate: route.returnDate,
+      tripType: "roundtrip" as const,
+    };
+
+    const queryString = serializeSearchState(searchState);
+    router.push(`/resultados?${queryString}`);
   }
+
+  // Header text based on mode
+  const headerText = isSmartMode
+    ? locale === "pt"
+      ? "próximos feriados"
+      : "upcoming holidays"
+    : locale === "pt"
+      ? "rotas populares"
+      : "popular routes";
+
+  const descriptionText = isSmartMode
+    ? locale === "pt"
+      ? `sugestões saindo de ${origin?.city || "são paulo"}`
+      : `suggestions from ${origin?.city || "são paulo"}`
+    : locale === "pt"
+      ? "explore destinos populares saindo do brasil"
+      : "explore popular destinations from brazil";
+
+  const routes = isSmartMode ? smartRoutes : simpleRoutes;
+
+  // Get airports for selector
+  const allAirports = getAllAirports();
+
+  const changeOriginText = locale === "pt" ? "trocar origem" : "change origin";
 
   return (
     <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-12">
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
           <h2 className="text-xl sm:text-2xl font-medium text-ink lowercase">
-            {locale === "pt" ? "rotas populares" : "popular routes"}
+            {headerText}
           </h2>
-          {!HAS_REAL_PRICE_HISTORY && (
-            <span 
-              className="text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wide"
-              style={{ 
-                background: "var(--cream-dark)", 
-                color: "var(--ink-muted)" 
-              }}
-            >
-              {locale === "pt" ? "exemplos" : "examples"}
-            </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-ink-muted">{descriptionText}</p>
+          {isSmartMode && (
+            <div className="relative">
+              <button
+                onClick={() => setShowOriginSelector(!showOriginSelector)}
+                className="text-xs text-blue hover:text-blue-soft transition-colors lowercase"
+              >
+                {changeOriginText}
+              </button>
+
+              {/* Origin Selector Dropdown */}
+              {showOriginSelector && (
+                <div
+                  className="absolute top-full left-0 mt-1 z-50 w-48 max-h-60 overflow-y-auto rounded-lg border shadow-lg"
+                  style={{
+                    background: "var(--card-bg)",
+                    borderColor: "var(--card-border)",
+                  }}
+                >
+                  {allAirports.map((airport) => (
+                    <button
+                      key={airport.code}
+                      onClick={() => handleOriginChange(airport.code)}
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-cream-dark/30 transition-colors flex items-center justify-between"
+                      style={{
+                        background: airport.code === detectedOrigin ? "var(--cream-dark)" : undefined,
+                      }}
+                    >
+                      <span className="capitalize text-ink">{airport.city}</span>
+                      <span className="text-xs text-ink-muted">{airport.code}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
-        <p className="text-sm text-ink-muted">
-          {HAS_REAL_PRICE_HISTORY
-            ? (locale === "pt"
-                ? "rotas com variação de preço detectada nas últimas 48h"
-                : "routes with price variation detected in the last 48h")
-            : (locale === "pt"
-                ? "explore destinos internacionais saindo do brasil"
-                : "explore international destinations from brazil")}
-        </p>
       </div>
 
-      {/* Grid de oportunidades */}
+      {/* Grid de rotas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {OPPORTUNITIES.slice(0, 6).map((opportunity) => (
-          <OpportunityCard
-            key={opportunity.id}
-            opportunity={opportunity}
-            onClick={() => handleOpportunityClick(opportunity)}
-          />
-        ))}
+        {loading ? (
+          <>
+            <LoadingSkeleton />
+            <LoadingSkeleton />
+            <LoadingSkeleton />
+            <LoadingSkeleton />
+            <LoadingSkeleton />
+            <LoadingSkeleton />
+          </>
+        ) : error ? (
+          null
+        ) : routes.length === 0 ? (
+          <div className="col-span-full text-center py-8">
+            <p className="text-sm text-ink-muted">
+              {locale === "pt"
+                ? "nenhuma rota disponível no momento"
+                : "no routes available at the moment"}
+            </p>
+          </div>
+        ) : isSmartMode ? (
+          (smartRoutes as SmartRouteCard[]).map((route) => (
+            <SmartRouteCardComponent
+              key={route.id}
+              route={route}
+              onClick={() => handleSmartRouteClick(route)}
+            />
+          ))
+        ) : (
+          (simpleRoutes as PopularRouteCard[]).map((route) => (
+            <SimpleRouteCard
+              key={route.id}
+              route={route}
+              onClick={() => handleSimpleRouteClick(route)}
+            />
+          ))
+        )}
       </div>
     </section>
   );
 }
-

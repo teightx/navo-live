@@ -97,7 +97,7 @@ const DEFAULT_ORIGIN = "GRU";
 /**
  * Maximum destinations per holiday
  */
-const DESTINATIONS_PER_HOLIDAY = 3;
+const DESTINATIONS_PER_HOLIDAY = 4;
 
 /**
  * Maximum holidays to show

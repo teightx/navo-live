@@ -17,6 +17,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRequestLogger } from "@/lib/logging/logger";
 import { getPopularRoutesForApi } from "@/lib/routes/popular";
+import { protectApiRoute } from "@/lib/api/protection";
 
 /**
  * Generate unique request ID for tracing
@@ -29,6 +30,15 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
+  // Check API protection (origin validation + rate limiting)
+  const protectionError = await protectApiRoute(request, {
+    endpoint: "popular",
+    rateLimit: "public",
+  });
+  if (protectionError) {
+    return protectionError;
+  }
+
   const requestId = generateRequestId();
   const startTime = Date.now();
   const logger = createRequestLogger(requestId);

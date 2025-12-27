@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { SwapButton } from "./SwapButton";
 import { AirportField } from "./AirportField";
@@ -10,7 +10,35 @@ import { useI18n } from "@/lib/i18n";
 import type { SearchState, TripType, Pax, CabinClass } from "@/lib/types/search";
 import { defaultSearchState } from "@/lib/types/search";
 import type { Airport } from "@/lib/airports";
+import { getAirportByCode } from "@/lib/airports";
 import { normalizeSearchState, serializeSearchState } from "@/lib/utils/searchParams";
+import { findNearestAirport } from "@/lib/geo/nearestAirport";
+
+// ============================================================================
+// LocalStorage Keys for origin persistence
+// ============================================================================
+
+const LAST_ORIGIN_KEY = "navo_last_origin";
+const GEO_ORIGIN_KEY = "navo_geo_origin";
+
+function getStoredOrigin(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    // Prioritize last search, then geolocation
+    return localStorage.getItem(LAST_ORIGIN_KEY) || localStorage.getItem(GEO_ORIGIN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function setGeoOrigin(code: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(GEO_ORIGIN_KEY, code.toUpperCase());
+  } catch {
+    // Ignore storage errors
+  }
+}
 
 function formatPaxSummary(pax: Pax, cabin: CabinClass, t: ReturnType<typeof useI18n>["t"]): string {
   const parts: string[] = [];
@@ -126,6 +154,63 @@ export function SearchBar({ initialState, onSearch, mode = "default" }: SearchBa
   const [state, setState] = useState<SearchState>(mergedInitialState);
   const [paxOpen, setPaxOpen] = useState(false);
   const paxButtonRef = useRef<HTMLButtonElement>(null);
+  const [geoDetected, setGeoDetected] = useState(false);
+
+  // Auto-detect origin from geolocation on mount
+  useEffect(() => {
+    // Skip if origin already set via initialState
+    if (initialState?.from || state.from || geoDetected) return;
+
+    async function detectOrigin() {
+      // Always try geolocation first (more accurate)
+      if (typeof navigator !== "undefined" && "geolocation" in navigator) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: false,
+              timeout: 8000,
+              maximumAge: 3600000, // 1h cache
+            });
+          });
+
+          const nearest = findNearestAirport({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude,
+          });
+
+          const airport = getAirportByCode(nearest.code);
+          if (airport) {
+            setState((s) => ({ ...s, from: airport }));
+            setGeoOrigin(nearest.code);
+            setGeoDetected(true);
+            return;
+          }
+        } catch {
+          // Geolocation denied or failed - continue to fallback
+        }
+      }
+
+      // Fallback: check localStorage
+      const storedOrigin = getStoredOrigin();
+      if (storedOrigin) {
+        const airport = getAirportByCode(storedOrigin);
+        if (airport) {
+          setState((s) => ({ ...s, from: airport }));
+          setGeoDetected(true);
+          return;
+        }
+      }
+
+      // Final fallback: GRU
+      const defaultAirport = getAirportByCode("GRU");
+      if (defaultAirport) {
+        setState((s) => ({ ...s, from: defaultAirport }));
+      }
+      setGeoDetected(true);
+    }
+
+    detectOrigin();
+  }, [initialState?.from, state.from, geoDetected]);
 
   function handleTripTypeChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const tripType = e.target.value as TripType;

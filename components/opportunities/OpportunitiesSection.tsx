@@ -231,9 +231,6 @@ function SmartRouteCardComponent({ route, onClick }: SmartRouteCardProps) {
 
   const fromText = locale === "pt" ? "a partir de" : "from";
   const viewFlightsText = locale === "pt" ? "ver voos" : "view flights";
-  const daysText = locale === "pt" ? "dias" : "days";
-
-  const dateRange = `${formatShortDate(route.departDate, locale)} – ${formatShortDate(route.returnDate, locale)}`;
 
   return (
     <button
@@ -245,50 +242,33 @@ function SmartRouteCardComponent({ route, onClick }: SmartRouteCardProps) {
       }}
     >
       <div className="p-4">
-        {/* Header: Holiday badge + Destination */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <div className="text-sm font-medium text-ink capitalize mb-1">
-              {route.toCity}
-            </div>
-            <div className="text-xs text-ink-muted capitalize">
-              {route.toCountry}
-            </div>
+        {/* Destination */}
+        <div className="mb-3">
+          <div className="text-sm font-medium text-ink capitalize mb-1">
+            {route.toCity}
           </div>
-
-          <div
-            className="px-2 py-0.5 rounded-full text-[10px] font-medium ml-2 flex-shrink-0"
-            style={{
-              background: "var(--blue)",
-              color: "var(--cream-soft)",
-            }}
-          >
-            {route.holidayName}
+          <div className="text-xs text-ink-muted capitalize">
+            {route.toCountry}
           </div>
         </div>
 
         {/* Price - only show if we have data */}
-        <div className="flex items-baseline gap-2 mb-3 min-h-[28px]">
+        <div className="flex items-baseline gap-2 mb-3 min-h-[24px]">
           {route.price !== undefined && (
             <>
               <span className="text-xs text-ink-muted lowercase">{fromText}</span>
-              <span className="text-xl font-bold text-blue">
+              <span className="text-lg font-bold text-blue">
                 {formatPrice(route.price)}
               </span>
             </>
           )}
         </div>
 
-        {/* Dates + CTA */}
+        {/* CTA */}
         <div
-          className="flex items-center justify-between pt-2 border-t"
+          className="flex items-center justify-end pt-2 border-t"
           style={{ borderColor: "var(--cream-dark)" }}
         >
-          <div className="text-xs text-ink-muted lowercase">
-            <span>{dateRange}</span>
-            <span className="mx-1">·</span>
-            <span>{route.tripDays} {daysText}</span>
-          </div>
           <span
             className="text-xs font-medium lowercase transition-colors group-hover:text-blue"
             style={{ color: "var(--ink)" }}
@@ -388,22 +368,14 @@ export function OpportunitiesSection() {
   // Detect user location on mount
   useEffect(() => {
     async function detectLocation() {
-      // First check localStorage
-      const savedOrigin = getLastOrigin();
-      if (savedOrigin) {
-        setDetectedOrigin(savedOrigin);
-        setGeoLoading(false);
-        return;
-      }
-
-      // Try geolocation
+      // Always try geolocation first (more accurate than cache)
       if (typeof navigator !== "undefined" && "geolocation" in navigator) {
         try {
           const position = await new Promise<GeolocationPosition>((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject, {
               enableHighAccuracy: false,
-              timeout: 5000,
-              maximumAge: 86400000, // 24h cache
+              timeout: 8000,
+              maximumAge: 3600000, // 1h cache
             });
           });
 
@@ -414,13 +386,23 @@ export function OpportunitiesSection() {
 
           setDetectedOrigin(nearest.code);
           setLastOrigin(nearest.code);
+          setGeoLoading(false);
+          return;
         } catch {
-          // Fallback to GRU
-          setDetectedOrigin("GRU");
+          // Geolocation failed or denied - continue to fallback
         }
-      } else {
-        setDetectedOrigin("GRU");
       }
+
+      // Fallback: check localStorage
+      const savedOrigin = getLastOrigin();
+      if (savedOrigin) {
+        setDetectedOrigin(savedOrigin);
+        setGeoLoading(false);
+        return;
+      }
+
+      // Final fallback to GRU
+      setDetectedOrigin("GRU");
       setGeoLoading(false);
     }
 
@@ -598,45 +580,92 @@ export function OpportunitiesSection() {
         </div>
       </div>
 
-      {/* Grid de rotas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {loading ? (
-          <>
-            <LoadingSkeleton />
-            <LoadingSkeleton />
-            <LoadingSkeleton />
-            <LoadingSkeleton />
-            <LoadingSkeleton />
-            <LoadingSkeleton />
-          </>
-        ) : error ? (
-          null
-        ) : routes.length === 0 ? (
-          <div className="col-span-full text-center py-8">
-            <p className="text-sm text-ink-muted">
-              {locale === "pt"
-                ? "nenhuma rota disponível no momento"
-                : "no routes available at the moment"}
-            </p>
-          </div>
-        ) : isSmartMode ? (
-          (smartRoutes as SmartRouteCard[]).map((route) => (
-            <SmartRouteCardComponent
-              key={route.id}
-              route={route}
-              onClick={() => handleSmartRouteClick(route)}
-            />
-          ))
-        ) : (
-          (simpleRoutes as PopularRouteCard[]).map((route) => (
+      {/* Loading state */}
+      {loading && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <LoadingSkeleton />
+          <LoadingSkeleton />
+          <LoadingSkeleton />
+          <LoadingSkeleton />
+          <LoadingSkeleton />
+          <LoadingSkeleton />
+          <LoadingSkeleton />
+          <LoadingSkeleton />
+        </div>
+      )}
+
+      {/* Error state */}
+      {error && null}
+
+      {/* Empty state */}
+      {!loading && !error && routes.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-sm text-ink-muted">
+            {locale === "pt"
+              ? "nenhuma rota disponível no momento"
+              : "no routes available at the moment"}
+          </p>
+        </div>
+      )}
+
+      {/* Smart mode: grouped by holiday */}
+      {!loading && !error && isSmartMode && smartRoutes.length > 0 && (
+        <div className="space-y-8">
+          {/* Group routes by holiday */}
+          {(() => {
+            const groupedByHoliday = smartRoutes.reduce((acc, route) => {
+              if (!acc[route.holidayKey]) {
+                acc[route.holidayKey] = {
+                  name: route.holidayName,
+                  dates: `${formatShortDate(route.departDate, locale)} – ${formatShortDate(route.returnDate, locale)}`,
+                  tripDays: route.tripDays,
+                  routes: [],
+                };
+              }
+              acc[route.holidayKey].routes.push(route);
+              return acc;
+            }, {} as Record<string, { name: string; dates: string; tripDays: number; routes: SmartRouteCard[] }>);
+
+            return Object.entries(groupedByHoliday).map(([key, group]) => (
+              <div key={key}>
+                {/* Holiday header */}
+                <div className="flex items-center gap-3 mb-4">
+                  <h3 className="text-base font-medium text-ink capitalize">
+                    {group.name}
+                  </h3>
+                  <span className="text-xs text-ink-muted">
+                    {group.dates} · {group.tripDays} {locale === "pt" ? "dias" : "days"}
+                  </span>
+                </div>
+
+                {/* Cards grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {group.routes.map((route) => (
+                    <SmartRouteCardComponent
+                      key={route.id}
+                      route={route}
+                      onClick={() => handleSmartRouteClick(route)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ));
+          })()}
+        </div>
+      )}
+
+      {/* Simple mode: flat grid */}
+      {!loading && !error && !isSmartMode && simpleRoutes.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {simpleRoutes.map((route) => (
             <SimpleRouteCard
               key={route.id}
               route={route}
               onClick={() => handleSimpleRouteClick(route)}
             />
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

@@ -16,6 +16,7 @@ import {
   type AmadeusFlightOffersResponse,
 } from "@/lib/amadeus";
 import type { SearchResponse, SearchError } from "@/lib/search/types";
+import { cacheFlights } from "@/lib/search/flightCache";
 
 // ============================================================================
 // Types
@@ -312,8 +313,18 @@ export async function GET(request: NextRequest) {
       skipped,
     });
 
-    // Cache the response
+    // Cache the response (search-level cache)
     setCache(cacheKey, response);
+
+    // Cache individual flights for detail page lookup
+    cacheFlights(flights, {
+      from: params.originLocationCode,
+      to: params.destinationLocationCode,
+      depart: params.departureDate,
+      return: params.returnDate,
+      adults: params.adults,
+      cabin: params.travelClass,
+    });
 
     return NextResponse.json(response);
   } catch (error) {

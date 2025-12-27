@@ -8,6 +8,10 @@ import { serializeSearchState } from "@/lib/utils/searchParams";
 import { defaultSearchState } from "@/lib/types/search";
 import { getAirportByCode } from "@/lib/mocks/airports";
 
+// Feature flag: set to true when real price monitoring is implemented
+const SHOW_OPPORTUNITIES = true;
+const HAS_REAL_PRICE_HISTORY = false;
+
 interface OpportunityCardProps {
   opportunity: Opportunity;
   onClick: () => void;
@@ -16,9 +20,13 @@ interface OpportunityCardProps {
 function OpportunityCard({ opportunity, onClick }: OpportunityCardProps) {
   const { t, locale } = useI18n();
   
-  const badgeText = opportunity.badge === "below_average"
-    ? (locale === "pt" ? "abaixo da média" : "below average")
-    : (locale === "pt" ? "menor preço recente" : "lowest recent price");
+  // When we have real price history, show actual badges
+  // For now, show a neutral "popular route" badge
+  const badgeText = HAS_REAL_PRICE_HISTORY
+    ? (opportunity.badge === "below_average"
+        ? (locale === "pt" ? "abaixo da média" : "below average")
+        : (locale === "pt" ? "menor preço recente" : "lowest recent price"))
+    : (locale === "pt" ? "rota popular" : "popular route");
 
   return (
     <button
@@ -120,16 +128,38 @@ export function OpportunitiesSection() {
     router.push(`/resultados?${queryString}`);
   }
 
+  // Hide section entirely if feature flag is off
+  if (!SHOW_OPPORTUNITIES) {
+    return null;
+  }
+
   return (
     <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-12">
       <div className="mb-6">
-        <h2 className="text-xl sm:text-2xl font-medium text-ink lowercase mb-2">
-          {locale === "pt" ? "preços monitorados" : "monitored prices"}
-        </h2>
+        <div className="flex items-center gap-2 mb-2">
+          <h2 className="text-xl sm:text-2xl font-medium text-ink lowercase">
+            {locale === "pt" ? "rotas populares" : "popular routes"}
+          </h2>
+          {!HAS_REAL_PRICE_HISTORY && (
+            <span 
+              className="text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wide"
+              style={{ 
+                background: "var(--cream-dark)", 
+                color: "var(--ink-muted)" 
+              }}
+            >
+              {locale === "pt" ? "exemplos" : "examples"}
+            </span>
+          )}
+        </div>
         <p className="text-sm text-ink-muted">
-          {locale === "pt"
-            ? "rotas com variação de preço detectada nas últimas 48h"
-            : "routes with price variation detected in the last 48h"}
+          {HAS_REAL_PRICE_HISTORY
+            ? (locale === "pt"
+                ? "rotas com variação de preço detectada nas últimas 48h"
+                : "routes with price variation detected in the last 48h")
+            : (locale === "pt"
+                ? "explore destinos internacionais saindo do brasil"
+                : "explore international destinations from brazil")}
         </p>
       </div>
 

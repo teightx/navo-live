@@ -33,7 +33,7 @@ export const runtime = "nodejs";
 export async function GET(request: NextRequest) {
   const requestId = generateRequestId();
   const startTime = Date.now();
-  const logger = createRequestLogger("api-smart-popular", requestId);
+  const logger = createRequestLogger(requestId);
 
   try {
     // Parse query params

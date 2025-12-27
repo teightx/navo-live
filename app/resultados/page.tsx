@@ -7,14 +7,22 @@ import { LogoMark, Wordmark } from "@/components/brand";
 import { Footer, ThemeToggle, LanguageToggle } from "@/components/layout";
 import { BackgroundWaves, SearchModal } from "@/components/ui";
 import { FlightCard } from "@/components/flights";
-import { ResultsFilters, DecisionSummary, PriceAlertCTA, type FilterType } from "@/components/results";
+import { 
+  DecisionSummary, 
+  sortByDecisionType,
+  FiltersSidebar,
+  applyFilters,
+  defaultFilterState,
+  PriceAlertCTA,
+  type DecisionType,
+  type FilterState,
+} from "@/components/results";
 import { useI18n } from "@/lib/i18n";
 import type { SearchState, FlightResult } from "@/lib/search/types";
 import { searchFlights, shouldUseMockFallback } from "@/lib/search/searchFlights";
 import { mockSearch } from "@/lib/search/mockSearch";
 import { parseSearchParams, normalizeSearchState, serializeSearchState } from "@/lib/utils/searchParams";
-import { findBestOffer, calculateAveragePrice, calculateScore, parseDurationToMinutes } from "@/lib/utils/bestOffer";
-import { saveSearch, removeSearch, isSearchSaved } from "@/lib/utils/savedSearches";
+import { calculateAveragePrice } from "@/lib/utils/bestOffer";
 import { addDecisionLabels, getHumanMessageDeterministic, type FlightWithLabels } from "@/lib/flights";
 
 // ============================================================================
@@ -128,7 +136,6 @@ function RateLimitState({
           <h3 className="text-sm font-medium text-ink mb-1">{t.results.rateLimitTitle}</h3>
           <p className="text-xs text-ink-muted mb-4">{t.results.rateLimitMessage}</p>
           
-          {/* Request ID for support */}
           {error.requestId && (
             <p className="text-xs text-ink-muted mb-4 font-mono">
               {t.results.requestCode.replace("{code}", error.requestId.slice(0, 8))}
@@ -196,7 +203,6 @@ function ErrorState({
           <h3 className="text-sm font-medium text-ink mb-1">{t.results.errorTitle}</h3>
           <p className="text-xs text-ink-muted mb-4">{error?.message || t.results.errorMessage}</p>
           
-          {/* Request ID for support */}
           {error?.requestId && (
             <p className="text-xs text-ink-muted mb-4 font-mono">
               {t.results.requestCode.replace("{code}", error.requestId.slice(0, 8))}
@@ -223,6 +229,65 @@ function ErrorState({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Active Filters Chips
+// ============================================================================
+
+function ActiveFiltersChips({ 
+  filters, 
+  onClear 
+}: { 
+  filters: FilterState; 
+  onClear: (key: keyof FilterState) => void;
+}) {
+  const { locale } = useI18n();
+  const chips: { key: keyof FilterState; label: string }[] = [];
+
+  const text = {
+    pt: { direct: "direto", oneStop: "1 escala", twoPlus: "2+ escalas", maxDuration: "até", morning: "manhã", afternoon: "tarde", evening: "noite", night: "madrugada" },
+    en: { direct: "direct", oneStop: "1 stop", twoPlus: "2+ stops", maxDuration: "max", morning: "morning", afternoon: "afternoon", evening: "evening", night: "night" },
+  };
+  const t = text[locale as "pt" | "en"] || text.pt;
+
+  if (filters.stops !== "all") {
+    const label = filters.stops === "direct" ? t.direct : filters.stops === "1" ? t.oneStop : t.twoPlus;
+    chips.push({ key: "stops", label });
+  }
+
+  if (filters.maxDuration !== null) {
+    const hours = Math.floor(filters.maxDuration / 60);
+    chips.push({ key: "maxDuration", label: `${t.maxDuration} ${hours}h` });
+  }
+
+  if (filters.airlines.length > 0) {
+    chips.push({ key: "airlines", label: filters.airlines.length === 1 ? filters.airlines[0] : `${filters.airlines.length} cias` });
+  }
+
+  if (filters.departureTime !== "all") {
+    chips.push({ key: "departureTime", label: t[filters.departureTime] });
+  }
+
+  if (chips.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-2 mb-4">
+      {chips.map(({ key, label }) => (
+        <button
+          key={key}
+          onClick={() => onClear(key)}
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors hover:opacity-80"
+          style={{ background: "var(--blue)", color: "var(--cream-soft)" }}
+        >
+          <span className="capitalize">{label}</span>
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+            <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </button>
+      ))}
     </div>
   );
 }
@@ -261,15 +326,19 @@ function ResultsContent() {
   const [results, setResults] = useState<FlightResult[]>([]);
   const [errorInfo, setErrorInfo] = useState<SearchErrorInfo | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<FilterType>("best");
   const [sessionId, setSessionId] = useState<string | null>(null);
+  
+  // Decision type (melhor equilíbrio, mais barato, mais rápido)
+  const [decisionType, setDecisionType] = useState<DecisionType>("best_balance");
+  
+  // Filtros avançados
+  const [filters, setFilters] = useState<FilterState>(defaultFilterState);
+  
+  // Mobile filters drawer
+  const [showFiltersDrawer, setShowFiltersDrawer] = useState(false);
   
   // Rate limit retry countdown
   const [retryCountdown, setRetryCountdown] = useState(0);
-  
-  // Estados para salvar busca
-  const [isSaved, setIsSaved] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "removing">("idle");
 
   // Countdown timer for rate limit
   useEffect(() => {
@@ -319,7 +388,6 @@ function ResultsContent() {
       if (abortSignal?.aborted) return;
 
       if (result.error) {
-        // Rate limited - never use mock fallback
         if (result.error.code === "RATE_LIMITED") {
           const resetSec = result.error.details?.resetSec ?? 30;
           setErrorInfo({
@@ -333,17 +401,14 @@ function ResultsContent() {
           return;
         }
 
-        // AMADEUS_DISABLED - use mock only if explicitly enabled in dev
         if (result.error.code === "AMADEUS_DISABLED" && shouldUseMockFallback()) {
-          console.log("[Results] Amadeus disabled, using mock (dev mode)");
           const mockResult = await mockSearch(searchState);
           setResults(mockResult.flights);
-          setSessionId(null); // No session for mocks
+          setSessionId(null);
           setErrorInfo(null);
           return;
         }
 
-        // Other errors - show error state
         setErrorInfo({
           code: result.error.code,
           message: result.error.message,
@@ -353,7 +418,6 @@ function ResultsContent() {
         return;
       }
 
-      // Success
       setResults(result.flights);
       setSessionId(result.sid || null);
       setErrorInfo(null);
@@ -379,49 +443,30 @@ function ResultsContent() {
     return () => abortController.abort();
   }, [searchKey, performSearch]);
 
-  // Processar resultados com labels de decisão
-  const { labeledFlights, humanMessage } = useMemo(() => {
+  // Processar resultados com labels de decisão, filtros e ordenação
+  const { displayFlights, humanMessage, totalCount } = useMemo(() => {
     if (results.length === 0) {
-      return { labeledFlights: [] as FlightWithLabels[], humanMessage: "" };
+      return { displayFlights: [] as FlightWithLabels[], humanMessage: "", totalCount: 0 };
     }
     
-    // Adicionar labels (best_balance, cheapest, fastest) e contexto de preço
-    const { flights: labeled } = addDecisionLabels(results);
+    // 1. Aplicar filtros
+    const filtered = applyFilters(results, filters);
     
-    // Ordenar baseado no filtro ativo
-    const sorted = [...labeled].sort((a, b) => {
-      if (activeFilter === "price") return a.price - b.price;
-      if (activeFilter === "duration") {
-        const durA = parseDurationToMinutes(a.duration);
-        const durB = parseDurationToMinutes(b.duration);
-        return durA - durB;
-      }
-      // "best" - combina preço e duração
-      const scoreA = calculateScore(a);
-      const scoreB = calculateScore(b);
-      return scoreA - scoreB;
-    });
+    // 2. Ordenar por tipo de decisão
+    const sorted = sortByDecisionType(filtered, decisionType);
     
-    // Gerar mensagem humana determinística (baseada no count)
-    const message = getHumanMessageDeterministic(sorted.length, locale as "pt" | "en");
+    // 3. Adicionar labels (best_balance, cheapest, fastest) e contexto de preço
+    const { flights: labeled } = addDecisionLabels(sorted);
     
-    return { labeledFlights: sorted, humanMessage: message };
-  }, [results, activeFilter, locale]);
-
-  // Calcular qual é a melhor oferta (baseado na lista original, não ordenada)
-  // Mantido para compatibilidade com bestOfferInfo
-  const bestOfferFlightId = useMemo(() => {
-    if (results.length === 0) return null;
-    const bestIndex = findBestOffer(results);
-    return results[bestIndex]?.id || null;
-  }, [results]);
-
-  // Verificar se busca está salva
-  useEffect(() => {
-    if (typeof window !== "undefined" && searchState.from && searchState.to) {
-      setIsSaved(isSearchSaved(searchState));
-    }
-  }, [searchState]);
+    // 4. Gerar mensagem humana
+    const message = getHumanMessageDeterministic(labeled.length, locale as "pt" | "en");
+    
+    return { 
+      displayFlights: labeled, 
+      humanMessage: message,
+      totalCount: results.length,
+    };
+  }, [results, filters, decisionType, locale]);
 
   // Use normalized state for SearchModal
   const initialSearchState: Partial<SearchState> = searchState;
@@ -436,22 +481,18 @@ function ResultsContent() {
   };
 
   function handleSearch(state: SearchState) {
-    // Remove flags de teste ao aplicar nova busca
     const normalizedState = normalizeSearchState(state);
     const queryString = serializeSearchState(normalizedState);
     router.replace(`/resultados?${queryString}`);
   }
 
   function handleFlightClick(flight: FlightResult) {
-    // Build URL with sid as primary identifier
     const urlParams = new URLSearchParams();
     
-    // Add sid first (primary lookup)
     if (sessionId) {
       urlParams.set("sid", sessionId);
     }
     
-    // Add search params as fallback
     if (from) urlParams.set("from", from);
     if (to) urlParams.set("to", to);
     if (depart) urlParams.set("depart", depart);
@@ -463,43 +504,6 @@ function ResultsContent() {
     router.push(url);
   }
 
-  function handleSaveSearch() {
-    if (!searchState.from || !searchState.to) return;
-    
-    if (isSaved) {
-      // Remover busca salva
-      setSaveStatus("removing");
-      const removed = removeSearch(searchState);
-      
-      if (removed) {
-        setIsSaved(false);
-        setSaveStatus("idle");
-      } else {
-        setSaveStatus("idle");
-      }
-    } else {
-      // Salvar busca
-      setSaveStatus("saving");
-      
-      // Simular pequeno delay para feedback visual
-      setTimeout(() => {
-        const saved = saveSearch(searchState);
-        
-        if (saved) {
-          setIsSaved(true);
-          setSaveStatus("saved");
-          
-          // Resetar status após 2 segundos
-          setTimeout(() => {
-            setSaveStatus("idle");
-          }, 2000);
-        } else {
-          setSaveStatus("idle");
-        }
-      }, 300);
-    }
-  }
-
   function handleRetry() {
     if (retryCountdown > 0) return;
     performSearch();
@@ -509,23 +513,33 @@ function ResultsContent() {
     setShowEditModal(true);
   }
 
-  // Determine error type for rendering
+  function handleClearFilter(key: keyof FilterState) {
+    setFilters(prev => ({
+      ...prev,
+      [key]: key === "stops" ? "all" : key === "departureTime" ? "all" : key === "airlines" ? [] : null,
+    }));
+  }
+
   const isRateLimited = errorInfo?.code === "RATE_LIMITED";
+  const hasResults = !isLoading && !errorInfo && displayFlights.length > 0;
+  const filteredCount = displayFlights.length;
+  const isFiltered = filteredCount < totalCount;
 
   return (
     <>
       <BackgroundWaves />
       
       <div className="min-h-screen relative">
+        {/* Header */}
         <header className="sticky top-0 z-50 bg-cream/80 dark:bg-cream/90 backdrop-blur-md border-b border-cream-dark/20">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-2">
                 <LogoMark className="w-6 h-6" />
-                <Wordmark className="text-lg" />
+                <Wordmark className="text-lg hidden sm:block" />
               </Link>
 
-              <div className="flex items-center gap-4 sm:gap-6">
+              <div className="flex items-center gap-3 sm:gap-6">
                 <div className="text-center">
                   <div className="text-sm sm:text-base text-ink lowercase">
                     {searchState.from?.city || from} → {searchState.to?.city || to}
@@ -543,7 +557,7 @@ function ResultsContent() {
                   {t.results.edit}
                 </button>
 
-                <div className="hidden sm:flex items-center gap-1 ml-2">
+                <div className="hidden sm:flex items-center gap-1">
                   <LanguageToggle />
                   <ThemeToggle />
                 </div>
@@ -552,110 +566,147 @@ function ResultsContent() {
           </div>
         </header>
 
-        <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 pb-16">
-          {/* 1. Título + Mensagem humana */}
-          <div className="mb-6">
-            <h1 className="text-xl sm:text-2xl font-medium text-ink lowercase">
-              {t.results.flightsTo} {searchState.to?.city || to}
-            </h1>
-            <p className="text-ink-muted text-sm mt-1">
-              {isLoading 
-                ? t.results.searching
-                : errorInfo
-                  ? t.results.errorTitle
-                  : labeledFlights.length === 0
-                    ? t.results.noResults
-                    : humanMessage
-              }
-            </p>
-          </div>
+        {/* Main Content - Layout em 2 colunas */}
+        <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 pb-16">
+          <div className="flex flex-col lg:flex-row gap-6">
+            
+            {/* Sidebar (desktop only) */}
+            <aside className="hidden lg:block w-64 flex-shrink-0">
+              <div className="sticky top-24 space-y-4">
+                {/* Filtros */}
+                {hasResults && (
+                  <FiltersSidebar
+                    flights={results}
+                    filters={filters}
+                    onFiltersChange={setFilters}
+                  />
+                )}
 
-          {/* 2. Decision Summary (3 cards: melhor equilíbrio, mais barato, mais rápido) */}
-          {!isLoading && !errorInfo && labeledFlights.length > 0 && (
-            <DecisionSummary 
-              flights={results}
-              onCardClick={(type, flightId) => {
-                // Scroll para o voo correspondente
-                const element = document.getElementById(`flight-${flightId}`);
-                if (element) {
-                  element.scrollIntoView({ behavior: "smooth", block: "center" });
-                  // Highlight temporário
-                  element.classList.add("ring-2", "ring-blue");
-                  setTimeout(() => {
-                    element.classList.remove("ring-2", "ring-blue");
-                  }, 2000);
-                }
-              }}
-            />
-          )}
+                {/* Alerta de preço */}
+                {hasResults && (
+                  <PriceAlertCTA 
+                    route={`${searchState.from?.city || from} → ${searchState.to?.city || to}`}
+                  />
+                )}
+              </div>
+            </aside>
 
-          {/* 3. CTA de alerta de preço */}
-          {!isLoading && !errorInfo && labeledFlights.length > 0 && (
-            <PriceAlertCTA 
-              route={`${searchState.from?.city || from} → ${searchState.to?.city || to}`}
-            />
-          )}
+            {/* Conteúdo Principal */}
+            <div className="flex-1 min-w-0">
+              {/* Header da lista */}
+              <div className="mb-4">
+                <h1 className="text-lg sm:text-xl font-medium text-ink lowercase">
+                  {t.results.flightsTo} {searchState.to?.city || to}
+                </h1>
+                <p className="text-ink-muted text-sm mt-1">
+                  {isLoading 
+                    ? t.results.searching
+                    : errorInfo
+                      ? t.results.errorTitle
+                      : displayFlights.length === 0
+                        ? t.results.noResults
+                        : humanMessage
+                  }
+                </p>
+              </div>
 
-          {/* 4. Filtros */}
-          {!isLoading && !errorInfo && labeledFlights.length > 0 && (
-            <div className="mb-6">
-              <ResultsFilters 
-                activeFilter={activeFilter}
-                onFilterChange={setActiveFilter}
-              />
-            </div>
-          )}
+              {/* Decision Summary (sempre visível se houver resultados) */}
+              {hasResults && (
+                <DecisionSummary 
+                  flights={results}
+                  activeType={decisionType}
+                  onTypeChange={setDecisionType}
+                />
+              )}
 
-          {/* 5. Estados (loading, error, empty) ou Lista de voos */}
-          {isLoading ? (
-            <LoadingSkeleton />
-          ) : isRateLimited && errorInfo ? (
-            <RateLimitState 
-              error={errorInfo}
-              onRetry={handleRetry}
-              onEditSearch={handleEditSearch}
-              retryCountdown={retryCountdown}
-            />
-          ) : errorInfo ? (
-            <ErrorState 
-              error={errorInfo}
-              onRetry={handleRetry} 
-              onEditSearch={handleEditSearch}
-            />
-          ) : labeledFlights.length === 0 ? (
-            <EmptyState onEditSearch={handleEditSearch} />
-          ) : (
-            <div className="space-y-5">
-              {labeledFlights.map((flight) => {
-                // Info para tooltip do best_balance
-                const bestOfferInfo = flight.label === "best_balance"
-                  ? { 
-                      explanation: t.results.bestOfferExplanation,
-                      priceDifference: calculateAveragePrice(results) - flight.price,
+              {/* Mobile: botão de filtros + alerta */}
+              {hasResults && (
+                <div className="lg:hidden mb-4 flex items-center gap-3">
+                  <button
+                    onClick={() => setShowFiltersDrawer(true)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-colors"
+                    style={{ background: "var(--card-bg)", borderColor: "var(--card-border)", color: "var(--ink)" }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M2 4H14M4 8H12M6 12H10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                    <span>filtros</span>
+                    {isFiltered && (
+                      <span className="w-5 h-5 rounded-full text-xs flex items-center justify-center" style={{ background: "var(--blue)", color: "var(--cream-soft)" }}>
+                        {Object.values(filters).filter(v => v !== "all" && v !== null && (Array.isArray(v) ? v.length > 0 : true)).length}
+                      </span>
+                    )}
+                  </button>
+                  
+                  <span className="text-sm text-ink-muted">
+                    {isFiltered 
+                      ? `${filteredCount} de ${totalCount}`
+                      : `${totalCount} ${locale === "pt" ? "voos" : "flights"}`
                     }
-                  : null;
-                
-                return (
-                  <div key={flight.id} id={`flight-${flight.id}`} className="transition-all duration-300">
-                    <FlightCard 
-                      flight={flight} 
-                      onClick={() => handleFlightClick(flight)}
-                      label={flight.label}
-                      priceContext={flight.priceContext}
-                      isHighlighted={flight.isHighlighted}
-                      bestOfferInfo={bestOfferInfo}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  </span>
+                </div>
+              )}
 
+              {/* Chips de filtros ativos */}
+              {hasResults && (
+                <ActiveFiltersChips filters={filters} onClear={handleClearFilter} />
+              )}
+
+              {/* Estados ou Lista de voos */}
+              {isLoading ? (
+                <LoadingSkeleton />
+              ) : isRateLimited && errorInfo ? (
+                <RateLimitState 
+                  error={errorInfo}
+                  onRetry={handleRetry}
+                  onEditSearch={handleEditSearch}
+                  retryCountdown={retryCountdown}
+                />
+              ) : errorInfo ? (
+                <ErrorState 
+                  error={errorInfo}
+                  onRetry={handleRetry} 
+                  onEditSearch={handleEditSearch}
+                />
+              ) : displayFlights.length === 0 ? (
+                <EmptyState onEditSearch={handleEditSearch} />
+              ) : (
+                <div className="space-y-3">
+                  {displayFlights.map((flight, index) => {
+                    const bestOfferInfo = flight.label === "best_balance"
+                      ? { 
+                          explanation: t.results.bestOfferExplanation,
+                          priceDifference: calculateAveragePrice(results) - flight.price,
+                        }
+                      : null;
+                    
+                    return (
+                      <div 
+                        key={flight.id} 
+                        id={`flight-${flight.id}`} 
+                        className="transition-all duration-300"
+                      >
+                        <FlightCard 
+                          flight={flight} 
+                          onClick={() => handleFlightClick(flight)}
+                          label={flight.label}
+                          priceContext={flight.priceContext}
+                          isHighlighted={index === 0 && decisionType === "best_balance"}
+                          bestOfferInfo={bestOfferInfo}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
         </main>
 
         <Footer />
       </div>
 
+      {/* Search Modal */}
       <SearchModal
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
@@ -663,6 +714,57 @@ function ResultsContent() {
         onSearch={handleSearch}
       />
 
+      {/* Mobile Filters Drawer */}
+      {showFiltersDrawer && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowFiltersDrawer(false)}
+          />
+          
+          {/* Drawer */}
+          <div 
+            className="absolute bottom-0 left-0 right-0 max-h-[80vh] overflow-y-auto rounded-t-2xl p-4"
+            style={{ background: "var(--cream)" }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-medium text-ink">filtros</h2>
+              <button
+                onClick={() => setShowFiltersDrawer(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ background: "var(--cream-dark)" }}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </button>
+            </div>
+            
+            <FiltersSidebar
+              flights={results}
+              filters={filters}
+              onFiltersChange={(newFilters) => {
+                setFilters(newFilters);
+              }}
+              className="border-0 p-0"
+            />
+            
+            <div className="mt-6 pt-4 border-t" style={{ borderColor: "var(--cream-dark)" }}>
+              <button
+                onClick={() => setShowFiltersDrawer(false)}
+                className="w-full py-3 rounded-xl text-sm font-medium transition-colors"
+                style={{ background: "var(--blue)", color: "var(--cream-soft)" }}
+              >
+                {locale === "pt" 
+                  ? `ver ${filteredCount} ${filteredCount === 1 ? "voo" : "voos"}`
+                  : `see ${filteredCount} ${filteredCount === 1 ? "flight" : "flights"}`
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

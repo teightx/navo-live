@@ -160,3 +160,12 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* iOS Safe Area utilities */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.h-safe {
+  height: env(safe-area-inset-bottom, 0px);
+}

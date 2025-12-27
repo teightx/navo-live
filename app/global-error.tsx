@@ -192,6 +192,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 
           {/* Actions */}
           <div style={styles.buttonGroup}>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Global error boundary cannot use Next.js Link component */}
             <a href="/" style={styles.primaryButton}>
               {text.goHome}
             </a>

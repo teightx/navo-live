@@ -574,25 +574,39 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     const durationMs = Date.now() - startTime;
 
-    // Handle AmadeusError
+    // Handle AmadeusError with detailed logging and normalized codes
     if (error instanceof AmadeusError) {
+      // Normalize error codes for UI
+      const normalizedCode = normalizeAmadeusErrorCode(error.status, error.code);
+      const humanMessage = getHumanFriendlyMessage(normalizedCode);
+
       logger.error("AMADEUS_ERROR", {
         code: error.code,
+        normalizedCode,
+        status: error.status,
         message: error.message,
         amadeusRequestId: error.requestId,
+        // Log URL host only (no query params with sensitive data)
+        urlHost: safeExtractHost(params.originLocationCode, params.destinationLocationCode),
+        isTimeout: error.code === "TIMEOUT",
+        isNetworkError: error.code === "NETWORK_ERROR",
         durationMs,
       });
 
       const errorResponse: SearchError = {
-        code: error.code,
-        message: error.message,
+        code: normalizedCode,
+        message: humanMessage,
         details: error.details as SearchError["details"],
         requestId: error.requestId,
       };
+
+      // Use appropriate status code
+      const httpStatus = getHttpStatusForCode(normalizedCode);
+
       return NextResponse.json(
         { ...errorResponse, _meta: { durationMs } },
         {
-          status: 502,
+          status: httpStatus,
           headers: createResponseHeaders(requestId),
         }
       );
@@ -601,23 +615,93 @@ export async function GET(request: NextRequest) {
     // Handle unexpected errors
     logger.error("INTERNAL_ERROR", {
       message: error instanceof Error ? error.message : "Unknown error",
-      stack: error instanceof Error ? error.stack : undefined,
+      stack: error instanceof Error ? error.stack?.slice(0, 500) : undefined,
       durationMs,
     });
 
     const errorResponse: SearchError = {
       code: "INTERNAL_ERROR",
-      message: error instanceof Error ? error.message : "Unknown error",
+      message: "Erro interno ao processar busca. Tente novamente.",
       requestId,
     };
     return NextResponse.json(
       { ...errorResponse, _meta: { durationMs } },
       {
-        status: 502,
+        status: 500,
         headers: createResponseHeaders(requestId),
       }
     );
   }
+}
+
+// ============================================================================
+// Error Normalization Helpers
+// ============================================================================
+
+/**
+ * Normalize Amadeus error codes to UI-friendly codes
+ */
+function normalizeAmadeusErrorCode(status: number, originalCode: string): string {
+  // Network/timeout errors
+  if (originalCode === "TIMEOUT") return "AMADEUS_TIMEOUT";
+  if (originalCode === "NETWORK_ERROR") return "AMADEUS_NETWORK_ERROR";
+
+  // Auth errors
+  if (status === 401 || status === 403) return "AMADEUS_AUTH_FAILED";
+
+  // Bad request
+  if (status === 400) return "AMADEUS_BAD_REQUEST";
+
+  // Server errors
+  if (status >= 500) return "AMADEUS_UNAVAILABLE";
+
+  // Pass through other codes
+  return originalCode || "AMADEUS_UNKNOWN_ERROR";
+}
+
+/**
+ * Get human-friendly message for error code
+ */
+function getHumanFriendlyMessage(code: string): string {
+  const messages: Record<string, string> = {
+    AMADEUS_AUTH_FAILED:
+      "Erro de autenticação com o provedor de voos. Por favor, tente novamente.",
+    AMADEUS_UNAVAILABLE:
+      "Serviço de busca temporariamente indisponível. Tente novamente em alguns minutos.",
+    AMADEUS_BAD_REQUEST:
+      "Parâmetros de busca inválidos. Verifique as datas e aeroportos.",
+    AMADEUS_NETWORK_ERROR:
+      "Erro de conexão com o serviço de voos. Verifique sua internet.",
+    AMADEUS_TIMEOUT:
+      "A busca demorou muito. Tente novamente.",
+    AMADEUS_UNKNOWN_ERROR:
+      "Erro ao buscar voos. Por favor, tente novamente.",
+  };
+
+  return messages[code] || "Erro ao buscar voos. Por favor, tente novamente.";
+}
+
+/**
+ * Get HTTP status code for normalized error code
+ */
+function getHttpStatusForCode(code: string): number {
+  const statusMap: Record<string, number> = {
+    AMADEUS_AUTH_FAILED: 503, // Service unavailable (auth issue is our problem)
+    AMADEUS_UNAVAILABLE: 503,
+    AMADEUS_BAD_REQUEST: 400,
+    AMADEUS_NETWORK_ERROR: 503,
+    AMADEUS_TIMEOUT: 504,
+    AMADEUS_UNKNOWN_ERROR: 502,
+  };
+
+  return statusMap[code] || 502;
+}
+
+/**
+ * Safely extract host info for logging (no sensitive params)
+ */
+function safeExtractHost(from: string, to: string): string {
+  return `route:${from}-${to}`;
 }
 
 /**

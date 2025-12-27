@@ -1,12 +1,12 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { Suspense, useState, useEffect, useMemo, useCallback } from "react";
+import { Suspense, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import { LogoMark, Wordmark } from "@/components/brand";
 import { Footer, ThemeToggle, LanguageToggle } from "@/components/layout";
 import { BackgroundWaves, SearchModal } from "@/components/ui";
-import { FlightCard } from "@/components/flights";
+import { FlightCard, FlightCardRoundtrip } from "@/components/flights";
 import { 
   DecisionSummary, 
   sortByDecisionType,
@@ -23,7 +23,13 @@ import { searchFlights, shouldUseMockFallback } from "@/lib/search/searchFlights
 import { mockSearch } from "@/lib/search/mockSearch";
 import { parseSearchParams, normalizeSearchState, serializeSearchState } from "@/lib/utils/searchParams";
 import { calculateAveragePrice } from "@/lib/utils/bestOffer";
-import { addDecisionLabels, getHumanMessageDeterministic, type FlightWithLabels } from "@/lib/flights";
+import { 
+  addDecisionLabels, 
+  getHumanMessageDeterministic, 
+  normalizeFlightForCard,
+  type FlightWithLabels,
+  type NormalizedFlightCardView,
+} from "@/lib/flights";
 
 // ============================================================================
 // Types
@@ -331,6 +337,12 @@ function ResultsContent() {
   // Decision type (melhor equilíbrio, mais barato, mais rápido)
   const [decisionType, setDecisionType] = useState<DecisionType>("best_balance");
   
+  // ID do voo selecionado manualmente pelo usuário
+  const [userSelectedFlightId, setUserSelectedFlightId] = useState<string | null>(null);
+  
+  // Flag para saber se a seleção foi feita pelo usuário (vs automática)
+  const [isUserSelection, setIsUserSelection] = useState(false);
+  
   // Filtros avançados
   const [filters, setFilters] = useState<FilterState>(defaultFilterState);
   
@@ -401,7 +413,15 @@ function ResultsContent() {
           return;
         }
 
-        if (result.error.code === "AMADEUS_DISABLED" && shouldUseMockFallback()) {
+        // Em desenvolvimento: fallback para mocks quando API não está disponível
+        const isDevFallbackEligible = 
+          result.error.code === "AMADEUS_DISABLED" ||
+          result.error.code === "NETWORK_ERROR" ||
+          result.error.code === "API_ERROR" ||
+          result.error.code.startsWith("AMADEUS_");
+        
+        if (isDevFallbackEligible && (shouldUseMockFallback() || process.env.NODE_ENV === "development")) {
+          console.info("[Navo] API unavailable, using mock data for development");
           const mockResult = await mockSearch(searchState);
           setResults(mockResult.flights);
           setSessionId(null);
@@ -444,9 +464,9 @@ function ResultsContent() {
   }, [searchKey, performSearch]);
 
   // Processar resultados com labels de decisão, filtros e ordenação
-  const { displayFlights, humanMessage, totalCount } = useMemo(() => {
+  const { displayFlights, humanMessage, totalCount, recommendedFlightId } = useMemo(() => {
     if (results.length === 0) {
-      return { displayFlights: [] as FlightWithLabels[], humanMessage: "", totalCount: 0 };
+      return { displayFlights: [] as FlightWithLabels[], humanMessage: "", totalCount: 0, recommendedFlightId: null };
     }
     
     // 1. Aplicar filtros
@@ -461,12 +481,54 @@ function ResultsContent() {
     // 4. Gerar mensagem humana
     const message = getHumanMessageDeterministic(labeled.length, locale as "pt" | "en");
     
+    // 5. O voo recomendado é o primeiro da lista ordenada (baseado no decisionType)
+    const recommendedId = sorted.length > 0 ? sorted[0].id : null;
+    
     return { 
       displayFlights: labeled, 
       humanMessage: message,
       totalCount: results.length,
+      recommendedFlightId: recommendedId,
     };
   }, [results, filters, decisionType, locale]);
+  
+  // ID do voo atualmente selecionado: usa seleção do usuário se houver, senão usa o recomendado
+  const selectedFlightId = useMemo(() => {
+    if (isUserSelection && userSelectedFlightId) {
+      // Verificar se o voo selecionado pelo usuário ainda está na lista
+      const stillExists = displayFlights.some(f => f.id === userSelectedFlightId);
+      if (stillExists) return userSelectedFlightId;
+    }
+    return recommendedFlightId;
+  }, [isUserSelection, userSelectedFlightId, recommendedFlightId, displayFlights]);
+  
+  // Quando o decisionType muda, resetar a seleção do usuário e fazer scroll
+  function handleDecisionTypeChange(type: DecisionType) {
+    setDecisionType(type);
+    setIsUserSelection(false);
+    setUserSelectedFlightId(null);
+  }
+  
+  // Scroll suave para o card selecionado quando decisionType muda
+  useEffect(() => {
+    if (selectedFlightId && !isLoading && displayFlights.length > 0) {
+      // Pequeno delay para garantir que o DOM atualizou
+      const timer = setTimeout(() => {
+        const element = document.getElementById(`flight-${selectedFlightId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [decisionType, selectedFlightId, isLoading, displayFlights.length]);
+  
+  // Quando o usuário clica em um card manualmente (não usado no fluxo normal de clique em card)
+  // mantido para futuro uso se quisermos ter seleção sem navegação
+  function handleCardManualSelect(flightId: string) {
+    setUserSelectedFlightId(flightId);
+    setIsUserSelection(true);
+  }
 
   // Use normalized state for SearchModal
   const initialSearchState: Partial<SearchState> = searchState;
@@ -615,7 +677,7 @@ function ResultsContent() {
                 <DecisionSummary 
                   flights={results}
                   activeType={decisionType}
-                  onTypeChange={setDecisionType}
+                  onTypeChange={handleDecisionTypeChange}
                 />
               )}
 
@@ -680,20 +742,43 @@ function ResultsContent() {
                         }
                       : null;
                     
+                    // Normalize flight for roundtrip card
+                    const normalizedView = normalizeFlightForCard(
+                      flight,
+                      searchState.tripType === "roundtrip",
+                      from,
+                      to
+                    );
+                    
+                    // O card é destacado se for o selecionado (automático ou manual)
+                    const isSelected = flight.id === selectedFlightId;
+                    
                     return (
                       <div 
                         key={flight.id} 
                         id={`flight-${flight.id}`} 
                         className="transition-all duration-300"
                       >
-                        <FlightCard 
-                          flight={flight} 
-                          onClick={() => handleFlightClick(flight)}
-                          label={flight.label}
-                          priceContext={flight.priceContext}
-                          isHighlighted={index === 0 && decisionType === "best_balance"}
-                          bestOfferInfo={bestOfferInfo}
-                        />
+                        {searchState.tripType === "roundtrip" ? (
+                          <FlightCardRoundtrip
+                            normalizedView={normalizedView}
+                            flight={flight}
+                            onClick={() => handleFlightClick(flight)}
+                            label={flight.label}
+                            priceContext={flight.priceContext}
+                            isHighlighted={isSelected}
+                            bestOfferInfo={bestOfferInfo}
+                          />
+                        ) : (
+                          <FlightCard 
+                            flight={flight} 
+                            onClick={() => handleFlightClick(flight)}
+                            label={flight.label}
+                            priceContext={flight.priceContext}
+                            isHighlighted={isSelected}
+                            bestOfferInfo={bestOfferInfo}
+                          />
+                        )}
                       </div>
                     );
                   })}

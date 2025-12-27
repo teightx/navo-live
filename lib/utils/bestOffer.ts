@@ -3,24 +3,31 @@
  * 
  * REGRA DE DECISÃO (determinística):
  * 
- * A melhor oferta é calculada usando um score que combina:
- * 1. Preço (peso: 60%)
- * 2. Duração em minutos (peso: 40%)
+ * A melhor oferta é calculada usando um score NORMALIZADO que combina:
+ * 1. Preço normalizado (0-1) - peso: 55%
+ * 2. Duração normalizada (0-1) - peso: 35%
+ * 3. Penalidade de escalas (0-1) - peso: 10%
  * 
  * Fórmula:
- * score = (preço * 0.6) + (duração_em_minutos * 40)
+ * score = priceNorm * 0.55 + durationNorm * 0.35 + stopsPenalty * 0.10
  * 
  * O voo com MENOR score é considerado a melhor oferta.
- * 
  * Em caso de empate, o voo com menor preço vence.
  * 
- * Exemplo:
- * - Voo A: R$ 3000, 10h (600min) → score = 3000*0.6 + 600*40 = 1800 + 24000 = 25800
- * - Voo B: R$ 3200, 9h (540min) → score = 3200*0.6 + 540*40 = 1920 + 21600 = 23520
- * - Voo B vence (menor score)
+ * Normalização:
+ * - priceNorm = (price - minPrice) / (maxPrice - minPrice)
+ * - durationNorm = (duration - minDuration) / (maxDuration - minDuration)
+ * - stopsPenalty = 0 (direto), 0.5 (1 escala), 1.0 (2+ escalas)
  */
 
 import type { FlightResult } from "@/lib/mocks/flights";
+
+// Pesos configuráveis para o algoritmo de best balance
+export const SCORE_WEIGHTS = {
+  price: 0.55,      // 55% peso para preço
+  duration: 0.35,   // 35% peso para duração
+  stops: 0.10,      // 10% peso para penalidade de escalas
+} as const;
 
 /**
  * Converte duração string (ex: "10h 45min") para minutos
@@ -37,8 +44,21 @@ export function parseDurationToMinutes(duration: string): number {
 }
 
 /**
+ * Calcula penalidade de escalas (0 = direto, 0.5 = 1 escala, 1 = 2+)
+ */
+export function getStopsPenalty(stops: string): number {
+  const isDirect = stops === "direto" || stops === "direct";
+  if (isDirect) return 0;
+  
+  const stopCount = parseInt(stops) || (stops.includes("1") ? 1 : 2);
+  if (stopCount === 1) return 0.5;
+  return 1;
+}
+
+/**
  * Calcula o score de um voo (menor = melhor)
- * Exportada para uso em outros lugares
+ * VERSÃO LEGADA - mantida para compatibilidade
+ * @deprecated Use calculateScoreNormalized para resultados mais precisos
  */
 export function calculateScore(flight: FlightResult): number {
   const priceWeight = 0.6;
@@ -46,6 +66,48 @@ export function calculateScore(flight: FlightResult): number {
   
   const durationMinutes = parseDurationToMinutes(flight.duration);
   const score = flight.price * priceWeight + durationMinutes * durationWeight;
+  
+  return score;
+}
+
+/**
+ * Calcula o score NORMALIZADO de um voo (menor = melhor)
+ * 
+ * @param flight - O voo a ser avaliado
+ * @param minPrice - Menor preço do conjunto
+ * @param maxPrice - Maior preço do conjunto
+ * @param minDuration - Menor duração do conjunto (em minutos)
+ * @param maxDuration - Maior duração do conjunto (em minutos)
+ * @returns Score entre 0 e 1 (menor = melhor)
+ */
+export function calculateScoreNormalized(
+  flight: FlightResult,
+  minPrice: number,
+  maxPrice: number,
+  minDuration: number,
+  maxDuration: number
+): number {
+  // Normalizar preço (0-1)
+  const priceRange = maxPrice - minPrice;
+  const priceNorm = priceRange > 0 
+    ? (flight.price - minPrice) / priceRange 
+    : 0;
+  
+  // Normalizar duração (0-1)
+  const durationMinutes = parseDurationToMinutes(flight.duration);
+  const durationRange = maxDuration - minDuration;
+  const durationNorm = durationRange > 0 
+    ? (durationMinutes - minDuration) / durationRange 
+    : 0;
+  
+  // Penalidade de escalas (0-1)
+  const stopsPenalty = getStopsPenalty(flight.stops);
+  
+  // Score ponderado
+  const score = 
+    priceNorm * SCORE_WEIGHTS.price + 
+    durationNorm * SCORE_WEIGHTS.duration + 
+    stopsPenalty * SCORE_WEIGHTS.stops;
   
   return score;
 }

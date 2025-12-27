@@ -1,20 +1,22 @@
 "use client";
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { LogoMark, Wordmark } from "@/components/brand";
 import { Footer, ThemeToggle, LanguageToggle } from "@/components/layout";
-import { BackgroundWaves } from "@/components/ui";
+import { BackgroundWaves, SearchModal } from "@/components/ui";
 import { formatPrice } from "@/lib/mocks/flights";
 import type { FlightResult } from "@/lib/search/types";
+import type { SearchState } from "@/lib/search/types";
 import { useI18n } from "@/lib/i18n";
-import { parseSearchParams } from "@/lib/utils/searchParams";
-import { AirlineLogo } from "@/components/flights";
+import { parseSearchParams, normalizeSearchState, serializeSearchState } from "@/lib/utils/searchParams";
+import { AirlineLogo, ItineraryLineCompact } from "@/components/flights";
 import { PriceInsightBadge } from "@/components/price/PriceInsightBadge";
 import { PartnerCard } from "@/components/partners/PartnerCard";
 import { FlightWarnings, FlightDecisionHeader } from "@/components/flight-detail";
 import { PriceAlertCTA } from "@/components/results";
+import { normalizeFlightForCard } from "@/lib/flights";
 import { buildOutboundUrl, type SearchContext } from "@/lib/partners/outbound";
 import { trackPartnerClickEvent } from "@/lib/tracking/partnerClick";
 import { getOTAPartners } from "@/lib/partners";
@@ -65,6 +67,7 @@ export function FlightDetailContent() {
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [requestId, setRequestId] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const sid = searchParams.get("sid");
   const from = searchParams.get("from");
@@ -146,6 +149,32 @@ export function FlightDetailContent() {
   function handleBack() {
     router.push(backUrl);
   }
+  
+  function handleEditSearch() {
+    setShowEditModal(true);
+  }
+  
+  function handleSearch(state: SearchState) {
+    const normalizedState = normalizeSearchState(state);
+    const queryString = serializeSearchState(normalizedState);
+    router.replace(`/resultados?${queryString}`);
+  }
+  
+  // Preço base (menor preço - usado para comparação)
+  const lowestPrice = flight?.price || 0;
+  
+  // Simular preços de OTAs (variação de -5% a +15% do preço base)
+  const mockPartnerPrices = useMemo(() => {
+    if (!flight) return {};
+    const base = flight.price;
+    return {
+      decolar: Math.round(base * 1.02),
+      maxmilhas: Math.round(base * 0.98),
+      viajanet: Math.round(base * 1.05),
+      "123milhas": Math.round(base * 1.08),
+      kayak: Math.round(base * 1.01),
+    };
+  }, [flight]);
 
   function handleAirlineClick() {
     if (!flight) return;
@@ -212,6 +241,12 @@ export function FlightDetailContent() {
                   </svg>
                   {t.flightDetails.back}
                 </button>
+                <button
+                  onClick={handleEditSearch}
+                  className="text-sm text-ink-muted hover:text-ink transition-colors lowercase"
+                >
+                  {t.flightDetails.editSearch}
+                </button>
                 <div className="hidden sm:flex items-center gap-1">
                   <LanguageToggle />
                   <ThemeToggle />
@@ -255,7 +290,7 @@ export function FlightDetailContent() {
                     borderColor: "var(--sage)",
                   }}
                 >
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center justify-between gap-4 mb-3">
                     <div className="flex items-center gap-3">
                       <AirlineLogo code={flight.airlineCode} name={flight.airline} />
                       <div>
@@ -271,12 +306,9 @@ export function FlightDetailContent() {
                             {t.flightDetails.officialSite}
                           </span>
                         </div>
-                        <p className="text-xs text-ink-muted mt-0.5">
-                          {locale === "pt" 
-                            ? "compra direta com a companhia. melhor suporte." 
-                            : "direct purchase. best support."
-                          }
-                        </p>
+                        <div className="text-lg font-bold text-ink mt-1">
+                          {formatPrice(displayPrice)}
+                        </div>
                       </div>
                     </div>
                     <button
@@ -292,6 +324,25 @@ export function FlightDetailContent() {
                         <path d="M3 11L11 3M11 3H5M11 3V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </button>
+                  </div>
+                  
+                  {/* Benefícios do site oficial */}
+                  <div 
+                    className="flex items-center gap-4 pt-3 border-t text-xs text-ink-muted"
+                    style={{ borderColor: "var(--cream-dark)" }}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-sage">
+                        <path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <span>{t.flightDetails.officialBenefit1}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-sage">
+                        <path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <span>{t.flightDetails.officialBenefit2}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -324,84 +375,164 @@ export function FlightDetailContent() {
               <aside className="lg:w-80 flex-shrink-0">
                 <div className="lg:sticky lg:top-24 space-y-4">
                   {/* Card resumo do voo */}
+                  {(() => {
+                    const isRoundtrip = !!returnDate;
+                    const normalizedView = normalizeFlightForCard(
+                      flight,
+                      isRoundtrip,
+                      from || "",
+                      to || ""
+                    );
+                    
+                    return (
+                      <div 
+                        className="rounded-2xl p-5"
+                        style={{
+                          background: "var(--card-bg)",
+                          border: "1px solid var(--card-border)",
+                        }}
+                      >
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <AirlineLogo code={flight.airlineCode} name={flight.airline} size={32} />
+                            <span className="text-sm font-medium text-ink capitalize">{flight.airline}</span>
+                          </div>
+                          {flight.co2 && (
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                              flight.co2.startsWith("-") ? "bg-sage/10 text-sage" : "bg-accent/10 text-accent"
+                            }`}>
+                              {flight.co2}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Itinerários: Ida e Volta */}
+                        <div className="space-y-3 mb-4">
+                          {/* IDA */}
+                          <div>
+                            <div 
+                              className="text-[10px] uppercase tracking-wider font-medium text-ink-muted mb-1"
+                            >
+                              {locale === "pt" ? "ida" : "outbound"}
+                            </div>
+                            <ItineraryLineCompact itinerary={normalizedView.outbound} />
+                          </div>
+
+                          {/* VOLTA (se roundtrip) */}
+                          {normalizedView.inbound && (
+                            <>
+                              <div className="h-px" style={{ background: "var(--cream-dark)" }} />
+                              <div>
+                                <div 
+                                  className="text-[10px] uppercase tracking-wider font-medium text-ink-muted mb-1"
+                                >
+                                  {locale === "pt" ? "volta" : "return"}
+                                </div>
+                                <ItineraryLineCompact itinerary={normalizedView.inbound} />
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Rota */}
+                        <div className="text-center text-xs text-ink-muted mb-4">
+                          {from} → {to}
+                          {isRoundtrip && ` / ${to} → ${from}`}
+                        </div>
+
+                        {/* Preço */}
+                        <div className="text-center pt-4 border-t" style={{ borderColor: "var(--cream-dark)" }}>
+                          <div className="text-sm text-ink-muted mb-1">
+                            {isRoundtrip 
+                              ? (locale === "pt" ? "ida e volta" : "round trip")
+                              : (locale === "pt" ? "só ida" : "one way")
+                            }
+                          </div>
+                          <div className="text-2xl font-bold text-blue mb-2">
+                            {formatPrice(displayPrice)}
+                          </div>
+                          {flight.priceInsight && (
+                            <PriceInsightBadge insight={flight.priceInsight} />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Alertas/Warnings */}
+                  <FlightWarnings flight={flight} />
+                  
+                  {/* Informações úteis do voo (mockadas) */}
                   <div 
-                    className="rounded-2xl p-5"
+                    className="rounded-xl p-4"
                     style={{
                       background: "var(--card-bg)",
                       border: "1px solid var(--card-border)",
                     }}
                   >
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <AirlineLogo code={flight.airlineCode} name={flight.airline} size={32} />
-                        <span className="text-sm font-medium text-ink capitalize">{flight.airline}</span>
-                      </div>
-                      {flight.co2 && (
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                          flight.co2.startsWith("-") ? "bg-sage/10 text-sage" : "bg-accent/10 text-accent"
-                        }`}>
-                          {flight.co2}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Timeline */}
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="text-center">
-                        <div className="text-2xl font-semibold text-ink tabular-nums">{flight.departure}</div>
-                      </div>
-
-                      <div className="flex-1 relative py-2">
-                        <div className="h-[2px] rounded-full" style={{ background: "var(--cream-dark)" }} />
-                        <div 
-                          className="absolute left-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full border-2 border-blue z-10"
-                          style={{ background: "var(--card-bg)" }}
-                        />
-                        {flight.stops !== "direto" && flight.stops !== "direct" && (
-                          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-blue z-10" />
-                        )}
-                        <div 
-                          className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full border-2 border-blue z-10"
-                          style={{ background: "var(--card-bg)" }}
-                        />
-                      </div>
-
-                      <div className="text-center">
-                        <div className="text-2xl font-semibold text-ink tabular-nums">
-                          {flight.arrival}
-                          {flight.nextDayArrival && <sup className="text-xs text-ink-muted ml-0.5">+1</sup>}
+                    <h3 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-3">
+                      {t.flightDetails.flightInfo}
+                    </h3>
+                    
+                    <div className="space-y-2.5 text-sm">
+                      {/* Bagagem */}
+                      <div className="flex items-start gap-2">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-ink-muted mt-0.5 flex-shrink-0">
+                          <rect x="3" y="4" width="8" height="8" rx="1" stroke="currentColor" strokeWidth="1.2"/>
+                          <path d="M5 4V3C5 2.44772 5.44772 2 6 2H8C8.55228 2 9 2.44772 9 3V4" stroke="currentColor" strokeWidth="1.2"/>
+                        </svg>
+                        <div>
+                          <div className="text-ink">{t.flightDetails.baggageIncluded}</div>
+                          <div className="text-xs text-ink-muted">{t.flightDetails.baggageNotIncluded}</div>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Info */}
-                    <div className="text-center text-sm text-ink-muted mb-4">
-                      {flight.duration} · {flight.stops === "direto" || flight.stops === "direct"
-                        ? t.flightDetails.direct
-                        : `${flight.stops}`
-                      }
+                      
+                      {/* Política de alteração */}
+                      <div className="flex items-start gap-2">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-ink-muted mt-0.5 flex-shrink-0">
+                          <path d="M2 7H12M2 7L5 4M2 7L5 10M12 7L9 4M12 7L9 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        <div className="text-ink">{t.flightDetails.changePolicy}</div>
+                      </div>
+                      
+                      {/* Reembolso */}
+                      <div className="flex items-start gap-2">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-ink-muted mt-0.5 flex-shrink-0">
+                          <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.2"/>
+                          <path d="M7 4V7L9 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                        </svg>
+                        <div className="text-ink">{t.flightDetails.refundPolicy}</div>
+                      </div>
+                      
+                      {/* Escala (se houver) */}
                       {flight.stopsCities && flight.stopsCities.length > 0 && (
-                        <span> ({flight.stopsCities.join(", ")})</span>
+                        <div className="flex items-start gap-2 pt-2 border-t" style={{ borderColor: "var(--cream-dark)" }}>
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-ink-muted mt-0.5 flex-shrink-0">
+                            <path d="M7 1V13M3 5L7 1L11 5M3 9L7 13L11 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          <div>
+                            <div className="text-xs text-ink-muted uppercase tracking-wide">{t.flightDetails.layoverInfo}</div>
+                            <div className="text-ink">
+                              {flight.stopsCities.map((city, idx) => (
+                                <span key={city}>
+                                  {idx > 0 && ", "}
+                                  {city}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
                       )}
                     </div>
-
-                    {/* Preço */}
-                    <div className="text-center pt-4 border-t" style={{ borderColor: "var(--cream-dark)" }}>
-                      <div className="text-sm text-ink-muted mb-1">
-                        {locale === "pt" ? "preço deste voo" : "flight price"}
-                      </div>
-                      <div className="text-2xl font-bold text-blue mb-2">
-                        {formatPrice(displayPrice)}
-                      </div>
-                      {flight.priceInsight && (
-                        <PriceInsightBadge insight={flight.priceInsight} />
-                      )}
-                    </div>
+                    
+                    <p className="text-[10px] text-ink-muted mt-3 pt-2 border-t" style={{ borderColor: "var(--cream-dark)" }}>
+                      {locale === "pt" 
+                        ? "informações estimadas. confirme no site do parceiro."
+                        : "estimated info. confirm on partner site."
+                      }
+                    </p>
                   </div>
-
-                  {/* Alertas/Warnings */}
-                  <FlightWarnings flight={flight} />
 
                   {/* CTA alerta de preço */}
                   <PriceAlertCTA route={routeDisplay} />
@@ -435,6 +566,14 @@ export function FlightDetailContent() {
 
         <Footer />
       </div>
+      
+      {/* Search Modal para editar busca */}
+      <SearchModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        initialState={searchState as Partial<SearchState>}
+        onSearch={handleSearch}
+      />
     </>
   );
 }

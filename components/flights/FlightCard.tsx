@@ -4,7 +4,7 @@ import { formatPrice } from "@/lib/mocks/flights";
 import type { FlightResult } from "@/lib/search/types";
 import type { FlightLabel, PriceContext } from "@/lib/flights";
 import { useI18n } from "@/lib/i18n";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { PriceInsightBadge } from "@/components/price/PriceInsightBadge";
 import { AirlineLogo } from "./AirlineLogo";
 
@@ -101,21 +101,42 @@ export function FlightCard({
     },
   };
 
-  // Configuração do contexto de preço
+  // Configuração do contexto de preço - melhorado com detalhe temporal
   const priceContextConfig = {
     below_average: {
       text: t.results.priceContextBelowAverage,
+      detail: t.results.priceContextBelowAverageDetail,
       className: "text-sage",
     },
     average: {
       text: t.results.priceContextAverage,
+      detail: null,
       className: "text-ink-muted",
     },
     above_average: {
       text: t.results.priceContextAboveAverage,
+      detail: null,
       className: "text-accent",
     },
   };
+  
+  // Gerar linha de contexto baseada nas características do voo
+  const contextLine = useMemo(() => {
+    if (effectiveLabel === "best_balance") {
+      return t.results.contextGoodDuration;
+    }
+    if (effectiveLabel === "cheapest") {
+      return t.results.contextBestPrice;
+    }
+    if (isDirect) {
+      return t.results.contextDirect;
+    }
+    // Para voos com escala, verificar se é curta (simplificado)
+    if (flight.stopsCities && flight.stopsCities.length === 1) {
+      return t.results.contextShortLayover;
+    }
+    return null;
+  }, [effectiveLabel, isDirect, flight.stopsCities, t]);
 
   const currentLabelConfig = effectiveLabel ? labelConfig[effectiveLabel] : null;
   const currentPriceContext = priceContext ? priceContextConfig[priceContext] : null;
@@ -213,35 +234,34 @@ export function FlightCard({
                   </div>
                 </div>
 
-                {/* Timeline visual */}
+                {/* Timeline visual - estilo discreto e informativo */}
                 <div className="flex-1 relative py-2">
-                  {/* Linha principal */}
-                  <div className="relative h-[3px] rounded-full" style={{ background: "var(--cream-dark)" }}>
-                    {/* Glow no modo escuro */}
+                  {/* Linha principal - fina e sóbria */}
+                  <div className="relative h-[2px] rounded-full" style={{ background: "var(--ink-muted)", opacity: 0.25 }}>
+                    {/* Ponto de origem - pequeno e discreto */}
                     <div 
-                      className="absolute inset-0 h-[3px] rounded-full pointer-events-none"
-                      style={{
-                        background: "linear-gradient(90deg, var(--blue) 0%, var(--blue-soft) 50%, var(--blue) 100%)",
-                        opacity: "var(--glow-opacity, 0)",
-                        filter: "blur(3px)",
+                      className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full z-10"
+                      style={{ 
+                        background: "var(--ink-muted)", 
+                        opacity: 0.6,
                       }}
                     />
                     
-                    {/* Ponto de origem */}
-                    <div 
-                      className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-blue z-10"
-                      style={{ background: "var(--card-bg)" }}
-                    />
-                    
-                    {/* Pontos de escala */}
+                    {/* Pontos de escala - ainda mais discretos */}
                     {!isDirect && (
-                      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-blue z-10" />
+                      <div 
+                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full z-10" 
+                        style={{ background: "var(--ink-muted)", opacity: 0.5 }}
+                      />
                     )}
                     
                     {/* Ponto de destino */}
                     <div 
-                      className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-blue z-10"
-                      style={{ background: "var(--card-bg)" }}
+                      className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full z-10"
+                      style={{ 
+                        background: "var(--ink-muted)", 
+                        opacity: 0.6,
+                      }}
                     />
                   </div>
 
@@ -273,7 +293,7 @@ export function FlightCard({
             </div>
 
             {/* Coluna 3: Preço e CTA */}
-            <div className="flex items-center justify-between lg:flex-col lg:items-end gap-3 lg:w-40 lg:flex-shrink-0 pt-4 lg:pt-0 border-t lg:border-t-0 lg:border-l lg:pl-6" style={{ borderColor: "var(--cream-dark)" }}>
+            <div className="flex items-center justify-between lg:flex-col lg:items-end gap-3 lg:w-44 lg:flex-shrink-0 pt-4 lg:pt-0 border-t lg:border-t-0 lg:border-l lg:pl-6" style={{ borderColor: "var(--cream-dark)" }}>
               <div className="text-right">
                 {/* Ofertas count */}
                 <div className="text-xs text-ink-muted mb-1">
@@ -285,14 +305,24 @@ export function FlightCard({
                   {formatPrice(flight.price)}
                 </div>
                 
-                {/* Price insight (API) ou contexto de preço (calculado) */}
+                {/* Price insight (API) ou contexto de preço (calculado) - melhorado com detalhe */}
                 {priceInsight ? (
                   <PriceInsightBadge insight={priceInsight} className="mt-1" />
                 ) : currentPriceContext ? (
                   <div className={`text-xs mt-1 ${currentPriceContext.className}`}>
                     {currentPriceContext.text}
+                    {currentPriceContext.detail && (
+                      <span className="text-ink-muted/70 ml-1">({currentPriceContext.detail})</span>
+                    )}
                   </div>
                 ) : null}
+                
+                {/* Linha de contexto do voo */}
+                {contextLine && (
+                  <div className="text-[10px] text-ink-muted mt-1.5 italic">
+                    {contextLine}
+                  </div>
+                )}
               </div>
               
               {/* CTA */}

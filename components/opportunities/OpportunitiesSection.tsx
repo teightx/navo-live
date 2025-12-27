@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { useI18n } from "@/lib/i18n";
 import { serializeSearchState } from "@/lib/utils/searchParams";
@@ -82,6 +82,37 @@ const SMART_ROUTES_ENABLED =
   process.env.NEXT_PUBLIC_SMART_ROUTES !== "false"; // Default: true
 
 // ============================================================================
+// Filter Types (mock - para futuro uso real)
+// ============================================================================
+
+type DurationFilter = "all" | "3" | "5" | "7+";
+type TypeFilter = "all" | "beach" | "city" | "nature";
+
+interface FilterChipProps {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}
+
+function FilterChip({ label, active, onClick }: FilterChipProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        px-3 py-1.5 rounded-full text-xs font-medium
+        transition-all duration-150 border
+        ${active 
+          ? "bg-blue text-cream-soft border-blue" 
+          : "bg-transparent text-ink-muted border-[var(--field-border)] hover:border-[var(--ink)]/20 hover:text-ink"
+        }
+      `}
+    >
+      {label}
+    </button>
+  );
+}
+
+// ============================================================================
 // Types
 // ============================================================================
 
@@ -106,6 +137,51 @@ interface PopularApiResponse {
     minSamplesRequired: number;
   };
   requestId: string;
+}
+
+// Mock destination types for filtering
+const DESTINATION_TYPES: Record<string, "beach" | "city" | "nature"> = {
+  // Praias
+  "miami": "beach",
+  "cancun": "beach",
+  "punta cana": "beach",
+  "orlando": "beach",
+  "cartagena": "beach",
+  "rio de janeiro": "beach",
+  "salvador": "beach",
+  "florianópolis": "beach",
+  "natal": "beach",
+  "fortaleza": "beach",
+  "recife": "beach",
+  "maceió": "beach",
+  // Cidades
+  "buenos aires": "city",
+  "santiago": "city",
+  "lima": "city",
+  "bogotá": "city",
+  "montevidéu": "city",
+  "são paulo": "city",
+  "nova york": "city",
+  "new york": "city",
+  "paris": "city",
+  "madrid": "city",
+  "lisboa": "city",
+  "londres": "city",
+  "roma": "city",
+  // Natureza
+  "bariloche": "nature",
+  "patagônia": "nature",
+  "cusco": "nature",
+  "machu picchu": "nature",
+  "iguaçu": "nature",
+  "chapada": "nature",
+  "bonito": "nature",
+  "gramado": "nature",
+};
+
+function getDestinationType(city: string): "beach" | "city" | "nature" | null {
+  const normalized = city.toLowerCase();
+  return DESTINATION_TYPES[normalized] || null;
 }
 
 // Smart mode types (new)
@@ -436,9 +512,9 @@ interface SmartRouteCardProps {
 }
 
 function SmartRouteCardComponent({ route, onClick, isGlass = false }: SmartRouteCardProps) {
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
 
-  const fromText = locale === "pt" ? "a partir de" : "from";
+  const priceLabel = t.home.lowestPriceFound;
   const viewFlightsText = locale === "pt" ? "ver voos" : "view flights";
   
   // Get destination image if available
@@ -475,14 +551,20 @@ function SmartRouteCardComponent({ route, onClick, isGlass = false }: SmartRoute
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           />
-          {/* Gradient overlay for text legibility */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-          {/* Destination name over image */}
+          {/* Enhanced gradient overlay for better text legibility */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
+          {/* Destination name over image - improved contrast */}
           <div className="absolute bottom-3 left-3 right-3">
-            <div className="text-base font-semibold text-white capitalize drop-shadow-md">
+            <div 
+              className="text-base font-semibold text-white capitalize"
+              style={{ textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}
+            >
               {route.toCity}
             </div>
-            <div className="text-xs text-white/75 capitalize drop-shadow-sm">
+            <div 
+              className="text-xs text-white/90 capitalize"
+              style={{ textShadow: "0 1px 4px rgba(0,0,0,0.4)" }}
+            >
               {route.toCountry}
             </div>
           </div>
@@ -503,10 +585,10 @@ function SmartRouteCardComponent({ route, onClick, isGlass = false }: SmartRoute
         )}
 
         {/* Price - only show if we have data */}
-        <div className={`flex items-baseline gap-2 min-h-[28px] ${hasImage ? "mb-2" : "mb-3"}`}>
+        <div className={`flex flex-col gap-0.5 min-h-[36px] ${hasImage ? "mb-2" : "mb-3"}`}>
           {route.price !== undefined && (
             <>
-              <span className="text-xs opacity-65 lowercase">{fromText}</span>
+              <span className="text-[10px] uppercase tracking-wider opacity-50">{priceLabel}</span>
               <span className="text-xl font-bold text-blue">
                 {formatPrice(route.price)}
               </span>
@@ -601,7 +683,7 @@ interface OpportunitiesSectionProps {
 
 export function OpportunitiesSection({ variant = "default" }: OpportunitiesSectionProps) {
   const router = useRouter();
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
 
   // State for simple mode
   const [simpleRoutes, setSimpleRoutes] = useState<PopularRouteCard[]>([]);
@@ -611,6 +693,31 @@ export function OpportunitiesSection({ variant = "default" }: OpportunitiesSecti
   const [origin, setOrigin] = useState<{ code: string; city: string } | null>(null);
   const [detectedOrigin, setDetectedOrigin] = useState<string | null>(null);
   const [showOriginSelector, setShowOriginSelector] = useState(false);
+
+  // Filter states
+  const [durationFilter, setDurationFilter] = useState<DurationFilter>("all");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+
+  // Filtered routes based on active filters
+  const filteredSmartRoutes = useMemo(() => {
+    return smartRoutes.filter((route) => {
+      // Duration filter
+      if (durationFilter !== "all") {
+        const days = route.tripDays;
+        if (durationFilter === "3" && days > 4) return false;
+        if (durationFilter === "5" && (days < 4 || days > 6)) return false;
+        if (durationFilter === "7+" && days < 7) return false;
+      }
+      
+      // Type filter
+      if (typeFilter !== "all") {
+        const destinationType = getDestinationType(route.toCity);
+        if (destinationType !== typeFilter) return false;
+      }
+      
+      return true;
+    });
+  }, [smartRoutes, durationFilter, typeFilter]);
 
   // Shared state
   const [loading, setLoading] = useState(true);
@@ -802,7 +909,7 @@ export function OpportunitiesSection({ variant = "default" }: OpportunitiesSecti
             {headerText}
           </h2>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 mb-4">
           <p className="text-sm text-ink-muted">{descriptionText}</p>
           {isSmartMode && (
             <div className="relative">
@@ -840,6 +947,58 @@ export function OpportunitiesSection({ variant = "default" }: OpportunitiesSecti
             </div>
           )}
         </div>
+
+        {/* Filter chips - mock for now */}
+        {isSmartMode && (
+          <div className="flex flex-wrap gap-2">
+            {/* Duration filters */}
+            <div className="flex items-center gap-1.5 mr-2">
+              <span className="text-[10px] uppercase tracking-wider text-ink-muted mr-1">
+                {locale === "pt" ? "duração" : "duration"}
+              </span>
+              <FilterChip 
+                label={t.home.filterDuration3} 
+                active={durationFilter === "3"} 
+                onClick={() => setDurationFilter(durationFilter === "3" ? "all" : "3")} 
+              />
+              <FilterChip 
+                label={t.home.filterDuration5} 
+                active={durationFilter === "5"} 
+                onClick={() => setDurationFilter(durationFilter === "5" ? "all" : "5")} 
+              />
+              <FilterChip 
+                label={t.home.filterDuration7} 
+                active={durationFilter === "7+"} 
+                onClick={() => setDurationFilter(durationFilter === "7+" ? "all" : "7+")} 
+              />
+            </div>
+
+            {/* Separator */}
+            <span className="w-px h-6 bg-ink-muted/20 mx-1 hidden sm:block" />
+
+            {/* Type filters */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] uppercase tracking-wider text-ink-muted mr-1">
+                {locale === "pt" ? "tipo" : "type"}
+              </span>
+              <FilterChip 
+                label={t.home.filterBeach} 
+                active={typeFilter === "beach"} 
+                onClick={() => setTypeFilter(typeFilter === "beach" ? "all" : "beach")} 
+              />
+              <FilterChip 
+                label={t.home.filterCity} 
+                active={typeFilter === "city"} 
+                onClick={() => setTypeFilter(typeFilter === "city" ? "all" : "city")} 
+              />
+              <FilterChip 
+                label={t.home.filterNature} 
+                active={typeFilter === "nature"} 
+                onClick={() => setTypeFilter(typeFilter === "nature" ? "all" : "nature")} 
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Loading state */}
@@ -870,12 +1029,32 @@ export function OpportunitiesSection({ variant = "default" }: OpportunitiesSecti
         </div>
       )}
 
+      {/* No routes after filtering */}
+      {!loading && !error && isSmartMode && smartRoutes.length > 0 && filteredSmartRoutes.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-ink-muted text-sm">
+            {locale === "pt" 
+              ? "nenhuma rota encontrada com esses filtros" 
+              : "no routes found with these filters"}
+          </p>
+          <button
+            onClick={() => {
+              setDurationFilter("all");
+              setTypeFilter("all");
+            }}
+            className="mt-3 text-blue hover:text-blue-soft text-sm transition-colors"
+          >
+            {locale === "pt" ? "limpar filtros" : "clear filters"}
+          </button>
+        </div>
+      )}
+
       {/* Smart mode: grouped by holiday */}
-      {!loading && !error && isSmartMode && smartRoutes.length > 0 && (
+      {!loading && !error && isSmartMode && filteredSmartRoutes.length > 0 && (
         <div className="space-y-8">
           {/* Group routes by holiday */}
           {(() => {
-            const groupedByHoliday = smartRoutes.reduce((acc, route) => {
+            const groupedByHoliday = filteredSmartRoutes.reduce((acc, route) => {
               if (!acc[route.holidayKey]) {
                 acc[route.holidayKey] = {
                   name: route.holidayName,

@@ -18,7 +18,7 @@ import { Header, Footer } from "@/components/layout";
 import { SearchModal } from "@/components/ui";
 import { SearchBar } from "@/components/searchbar";
 import { OpportunitiesSection } from "@/components/opportunities/OpportunitiesSection";
-import { HomeWaveTransition } from "@/components/home";
+import { HomeWaveTransition, HomeFAQ } from "@/components/home";
 import { useI18n } from "@/lib/i18n";
 import { parseSearchParams, normalizeSearchState, serializeSearchState } from "@/lib/utils/searchParams";
 import type { SearchState } from "@/lib/types/search";
@@ -75,19 +75,46 @@ function HomeContent() {
           }}
         >
           {/* Conteúdo do Hero - centralizado verticalmente, compensando header e ondas */}
-          <div className="relative z-10 flex-1 flex flex-col items-center justify-center mx-auto max-w-5xl w-full px-4 sm:px-6 pt-20 pb-[120px] sm:pb-[140px] md:pb-[160px]">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-medium text-ink mb-4 tracking-tight">
+          {/* Mobile: mais espaço vertical, alinhamento à esquerda. Desktop: centralizado */}
+          <div className="relative z-10 flex-1 flex flex-col items-start sm:items-center justify-center mx-auto max-w-5xl w-full px-5 sm:px-6 pt-24 sm:pt-16 pb-[100px] sm:pb-[120px] md:pb-[140px]">
+            {/* Título e subtítulo */}
+            {/* Mobile: alinhado à esquerda com mais respiração. Desktop: centralizado */}
+            <div className="text-left sm:text-center mb-8 sm:mb-6">
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-medium text-ink mb-4 sm:mb-3 tracking-tight">
                 {t.home.headline}
               </h1>
-              <p className="text-ink-soft text-base sm:text-lg">
+              <p className="text-ink-soft text-sm sm:text-lg max-w-xl sm:mx-auto">
                 {t.home.subheadline}
               </p>
             </div>
 
-            <div className="w-full max-w-4xl mx-auto">
+            {/* Bloco de proposta de valor - 3 bullets - DESKTOP: antes do search */}
+            {/* Desktop: horizontal centralizado acima do search */}
+            <div className="hidden sm:flex flex-row items-center justify-center gap-6 mb-6 text-sm text-ink-muted">
+              <div className="flex items-center gap-2">
+                <svg className="w-3.5 h-3.5 text-sage flex-shrink-0" viewBox="0 0 16 16" fill="none">
+                  <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>{t.home.valueProp1}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg className="w-3.5 h-3.5 text-sage flex-shrink-0" viewBox="0 0 16 16" fill="none">
+                  <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>{t.home.valueProp2}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg className="w-3.5 h-3.5 text-sage flex-shrink-0" viewBox="0 0 16 16" fill="none">
+                  <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>{t.home.valueProp3}</span>
+              </div>
+            </div>
+
+            {/* Formulário de busca */}
+            <div className="w-full max-w-4xl sm:mx-auto">
               {hasSearchParams && (
-                <div className="mb-4 text-center">
+                <div className="mb-4 text-left sm:text-center">
                   <button
                     onClick={() => setShowEditModal(true)}
                     className="text-sm text-blue hover:text-blue-soft transition-colors lowercase"
@@ -98,6 +125,39 @@ function HomeContent() {
               )}
 
               <SearchBar mode="default" initialState={initialState} />
+            </div>
+
+            {/* Bloco de proposta de valor - 3 bullets - MOBILE: depois do search */}
+            {/* Mobile: vertical alinhado à esquerda como lista abaixo do search */}
+            <div className="flex sm:hidden flex-col items-start gap-3 mt-6 text-xs text-ink-muted">
+              <div className="flex items-center gap-2">
+                <svg className="w-3.5 h-3.5 text-sage flex-shrink-0" viewBox="0 0 16 16" fill="none">
+                  <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>{t.home.valueProp1}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg className="w-3.5 h-3.5 text-sage flex-shrink-0" viewBox="0 0 16 16" fill="none">
+                  <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>{t.home.valueProp2}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg className="w-3.5 h-3.5 text-sage flex-shrink-0" viewBox="0 0 16 16" fill="none">
+                  <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>{t.home.valueProp3}</span>
+              </div>
+            </div>
+
+            {/* Micro-bloco de confiança */}
+            {/* Mobile: menor e mais discreto. Desktop: normal */}
+            <div className="mt-6 sm:mt-6 flex flex-wrap items-center justify-start sm:justify-center gap-3 sm:gap-6 text-[9px] sm:text-xs text-ink-muted/60 sm:text-ink-muted/70">
+              <span>{t.home.trustRedirect}</span>
+              <span className="hidden sm:block w-px h-3 bg-ink-muted/30" />
+              <span>{t.home.trustBuy}</span>
+              <span className="hidden sm:block w-px h-3 bg-ink-muted/30" />
+              <span>{t.home.trustNoFees}</span>
             </div>
           </div>
 
@@ -121,6 +181,10 @@ function HomeContent() {
           <div className="pt-12 md:pt-16">
             <OpportunitiesSection variant="home" />
           </div>
+          
+          {/* FAQ Section */}
+          <HomeFAQ />
+          
           <Footer variant="home" />
         </section>
       </main>

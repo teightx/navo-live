@@ -12,3 +12,14 @@ export {
   type DecisionLabelsResult,
 } from "./decisionLabels";
 
+export {
+  normalizeFlightForCard,
+  normalizeFlightsForCards,
+  formatStopsCount,
+  formatDurationFromMinutes,
+  type NormalizedItinerary,
+  type NormalizedFlightCardView,
+  type ItineraryDirection,
+  type FlightWarning,
+} from "./normalizedItinerary";
+

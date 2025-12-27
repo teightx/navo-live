@@ -212,12 +212,11 @@ export function SearchBar({ initialState, onSearch, mode = "default" }: SearchBa
     detectOrigin();
   }, [initialState?.from, state.from, geoDetected]);
 
-  function handleTripTypeChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const tripType = e.target.value as TripType;
+  function handleTripTypeChange(newType: TripType) {
     setState((s) => ({
       ...s,
-      tripType,
-      returnDate: tripType === "oneway" ? null : s.returnDate,
+      tripType: newType,
+      returnDate: newType === "oneway" ? null : s.returnDate,
     }));
   }
 
@@ -265,18 +264,39 @@ export function SearchBar({ initialState, onSearch, mode = "default" }: SearchBa
 
   return (
     <div className="w-full max-w-4xl mx-auto px-4 sm:px-0">
-      {/* Trip type selector */}
-      <div className="mb-3 pl-1">
-        <div className="relative inline-flex items-center">
-          <select
-            value={state.tripType}
-            onChange={handleTripTypeChange}
-            className="appearance-none bg-transparent text-sm text-ink-soft pr-5 cursor-pointer focus:outline-none hover:text-ink transition-colors"
+      {/* Trip type selector - segmented control minimalista */}
+      <div className="mb-3">
+        <div className="inline-flex items-center gap-1 p-0.5 rounded-lg" style={{ background: "var(--cream-dark)" }}>
+          <button
+            type="button"
+            onClick={() => handleTripTypeChange("roundtrip")}
+            className={`
+              px-3 py-1.5 rounded-md text-sm font-medium
+              transition-all duration-150
+              ${state.tripType === "roundtrip"
+                ? "text-ink shadow-sm"
+                : "text-ink-muted hover:text-ink"
+              }
+            `}
+            style={state.tripType === "roundtrip" ? { background: "var(--card-bg)" } : undefined}
           >
-            <option value="roundtrip">{t.search.tripType.roundtrip}</option>
-            <option value="oneway">{t.search.tripType.oneway}</option>
-          </select>
-          <ChevronDownIcon className="absolute right-0 pointer-events-none text-ink-muted" />
+            {t.search.tripType.roundtrip}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTripTypeChange("oneway")}
+            className={`
+              px-3 py-1.5 rounded-md text-sm font-medium
+              transition-all duration-150
+              ${state.tripType === "oneway"
+                ? "text-ink shadow-sm"
+                : "text-ink-muted hover:text-ink"
+              }
+            `}
+            style={state.tripType === "oneway" ? { background: "var(--card-bg)" } : undefined}
+          >
+            {t.search.tripType.oneway}
+          </button>
         </div>
       </div>
 

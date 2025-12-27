@@ -16,7 +16,20 @@ export const en: Messages = {
   // Home
   home: {
     headline: "where do you want to go?",
-    subheadline: "prices change. we keep track.",
+    subheadline: "compare flight prices and find the best time to buy",
+    valueProp1: "compare prices across sites and airlines",
+    valueProp2: "find the best balance between time and price",
+    valueProp3: "track price changes",
+    trustRedirect: "we redirect to partners",
+    trustBuy: "you buy on official sites or OTAs",
+    trustNoFees: "no fees",
+    lowestPriceFound: "lowest price found",
+    filterDuration3: "3 days",
+    filterDuration5: "5 days",
+    filterDuration7: "7+ days",
+    filterBeach: "beach",
+    filterCity: "city",
+    filterNature: "nature",
   },
 
   // Search
@@ -91,8 +104,14 @@ export const en: Messages = {
     labelFastest: "fastest",
     // Price context
     priceContextBelowAverage: "below average",
+    priceContextBelowAverageDetail: "last 30 days",
     priceContextAverage: "average price",
     priceContextAboveAverage: "pricey now",
+    // Flight context lines
+    contextGoodDuration: "good duration for the price",
+    contextDirect: "direct flight",
+    contextShortLayover: "short layover",
+    contextBestPrice: "lowest price on this route",
   },
 
   // Flight Details
@@ -124,6 +143,22 @@ export const en: Messages = {
     errorMessage: "could not load flight details.",
     tryAgain: "try again",
     flightExpired: "the offer may have expired. please start a new search.",
+    editSearch: "edit search",
+    // Price comparison
+    priceDiffCheaper: "R$ {amount} cheaper",
+    priceDiffSame: "same price",
+    priceDiffMore: "R$ {amount} more",
+    // Official site benefits
+    officialBenefit1: "better after-sales support",
+    officialBenefit2: "no middlemen",
+    // Flight info
+    flightInfo: "flight info",
+    baggageIncluded: "carry-on included",
+    baggageNotIncluded: "checked baggage not included",
+    changePolicy: "changes allowed with fee",
+    refundPolicy: "partial refund available",
+    layoverInfo: "layover",
+    layoverDuration: "{duration} in {city}",
   },
 
   // Footer
@@ -170,6 +205,50 @@ export const en: Messages = {
     newSearch: "new search",
     globalTitle: "oops, something went wrong",
     globalMessage: "there was a problem loading the page. please try again.",
+  },
+  
+  // FAQ
+  faq: {
+    title: "frequently asked questions",
+    subtitle: "everything you need to know before booking",
+    questions: {
+      howFindPrices: {
+        q: "how does navo find flight prices?",
+        a: "we search real-time prices from airlines and partner travel agencies, comparing the best deals for you.",
+      },
+      doBuyHere: {
+        q: "do I buy the ticket through navo?",
+        a: "no. navo is a comparison site. you choose the best offer and we redirect you to the partner site to complete your purchase.",
+      },
+      anyFees: {
+        q: "does navo charge any fees?",
+        a: "we don't charge any fees. the price you see is the price you pay on the partner site.",
+      },
+      priceChange: {
+        q: "can the price change later?",
+        a: "yes. flight prices are dynamic and may vary. always confirm the final price on the partner site before booking.",
+      },
+      whatIsBestBalance: {
+        q: "what is 'best balance'?",
+        a: "it's the flight that offers the best value between price and duration. the cheapest isn't always the best when you consider travel time.",
+      },
+      whatIsPriceAlert: {
+        q: "what is a price alert?",
+        a: "it's a notification you receive when the price of a route you're monitoring drops. so you don't miss any deals.",
+      },
+      trustPartners: {
+        q: "can I trust the sites I'm redirected to?",
+        a: "we only work with official airlines and well-known travel agencies in the market.",
+      },
+      sellHotels: {
+        q: "does navo sell hotels or cars?",
+        a: "for now, we focus only on flights. we want to do this really well before expanding.",
+      },
+      priceUpdateFrequency: {
+        q: "how often are prices updated?",
+        a: "we search prices in real-time with each search. the data you see is always current.",
+      },
+    },
   },
 } as const;
 

@@ -13,7 +13,7 @@
  */
 
 import type { FlightResult } from "@/lib/search/types";
-import { parseDurationToMinutes, calculateScore } from "@/lib/utils/bestOffer";
+import { parseDurationToMinutes, calculateScoreNormalized, getStopsPenalty } from "@/lib/utils/bestOffer";
 
 // ============================================================================
 // Types
@@ -111,17 +111,26 @@ function findFastestIndex(flights: FlightResult[]): number {
 
 /**
  * Encontra o índice do voo com melhor equilíbrio
- * Usa score ponderado: 60% preço, 40% duração
+ * Usa score normalizado: 55% preço, 35% duração, 10% escalas
  */
 function findBestBalanceIndex(flights: FlightResult[]): number {
   if (flights.length === 0) return -1;
   
+  // Calcular min/max para normalização
+  const prices = flights.map(f => f.price);
+  const durations = flights.map(f => parseDurationToMinutes(f.duration));
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+  const minDuration = Math.min(...durations);
+  const maxDuration = Math.max(...durations);
+  
   let bestIndex = 0;
-  let bestScore = calculateScore(flights[0]);
+  let bestScore = calculateScoreNormalized(flights[0], minPrice, maxPrice, minDuration, maxDuration);
   
   for (let i = 1; i < flights.length; i++) {
-    const score = calculateScore(flights[i]);
-    if (score < bestScore) {
+    const score = calculateScoreNormalized(flights[i], minPrice, maxPrice, minDuration, maxDuration);
+    // Menor score vence, em empate menor preço vence
+    if (score < bestScore || (score === bestScore && flights[i].price < flights[bestIndex].price)) {
       bestIndex = i;
       bestScore = score;
     }

@@ -10,6 +10,19 @@ export interface Messages {
   home: {
     headline: string;
     subheadline: string;
+    valueProp1: string;
+    valueProp2: string;
+    valueProp3: string;
+    trustRedirect: string;
+    trustBuy: string;
+    trustNoFees: string;
+    lowestPriceFound: string;
+    filterDuration3: string;
+    filterDuration5: string;
+    filterDuration7: string;
+    filterBeach: string;
+    filterCity: string;
+    filterNature: string;
   };
   search: {
     tripType: {
@@ -80,8 +93,14 @@ export interface Messages {
     labelFastest: string;
     // Price context
     priceContextBelowAverage: string;
+    priceContextBelowAverageDetail: string;
     priceContextAverage: string;
     priceContextAboveAverage: string;
+    // Flight context lines
+    contextGoodDuration: string;
+    contextDirect: string;
+    contextShortLayover: string;
+    contextBestPrice: string;
   };
   flightDetails: {
     departure: string;
@@ -111,6 +130,22 @@ export interface Messages {
     errorMessage: string;
     tryAgain: string;
     flightExpired: string;
+    editSearch: string;
+    // Comparação de preços
+    priceDiffCheaper: string;
+    priceDiffSame: string;
+    priceDiffMore: string;
+    // Explicação site oficial
+    officialBenefit1: string;
+    officialBenefit2: string;
+    // Informações úteis
+    flightInfo: string;
+    baggageIncluded: string;
+    baggageNotIncluded: string;
+    changePolicy: string;
+    refundPolicy: string;
+    layoverInfo: string;
+    layoverDuration: string;
   };
   footer: {
     disclaimer: string;
@@ -140,6 +175,21 @@ export interface Messages {
       title: string;
     };
   };
+  faq: {
+    title: string;
+    subtitle: string;
+    questions: {
+      howFindPrices: { q: string; a: string };
+      doBuyHere: { q: string; a: string };
+      anyFees: { q: string; a: string };
+      priceChange: { q: string; a: string };
+      whatIsBestBalance: { q: string; a: string };
+      whatIsPriceAlert: { q: string; a: string };
+      trustPartners: { q: string; a: string };
+      sellHotels: { q: string; a: string };
+      priceUpdateFrequency: { q: string; a: string };
+    };
+  };
   error: {
     title: string;
     message: string;
@@ -163,7 +213,20 @@ export const pt: Messages = {
   },
   home: {
     headline: "para onde você quer ir?",
-    subheadline: "preços mudam. a gente acompanha.",
+    subheadline: "compare passagens aéreas e encontre o melhor momento para comprar",
+    valueProp1: "compare preços entre sites e companhias",
+    valueProp2: "encontre o melhor equilíbrio entre tempo e preço",
+    valueProp3: "acompanhe variações de preço",
+    trustRedirect: "redirecionamos para parceiros",
+    trustBuy: "você compra no site oficial ou OTA",
+    trustNoFees: "sem taxas",
+    lowestPriceFound: "menor preço encontrado",
+    filterDuration3: "3 dias",
+    filterDuration5: "5 dias",
+    filterDuration7: "7+ dias",
+    filterBeach: "praia",
+    filterCity: "cidade",
+    filterNature: "natureza",
   },
   search: {
     tripType: {
@@ -234,8 +297,14 @@ export const pt: Messages = {
     labelFastest: "mais rápido",
     // Price context
     priceContextBelowAverage: "abaixo do normal",
+    priceContextBelowAverageDetail: "últimos 30 dias",
     priceContextAverage: "na média",
     priceContextAboveAverage: "caro agora",
+    // Flight context lines
+    contextGoodDuration: "boa duração para o preço",
+    contextDirect: "voo direto",
+    contextShortLayover: "escala curta",
+    contextBestPrice: "menor preço desta rota",
   },
   flightDetails: {
     departure: "partida",
@@ -265,6 +334,22 @@ export const pt: Messages = {
     errorMessage: "não foi possível carregar os detalhes do voo.",
     tryAgain: "tentar novamente",
     flightExpired: "a oferta pode ter expirado. faça uma nova busca.",
+    editSearch: "editar busca",
+    // Comparação de preços
+    priceDiffCheaper: "R$ {amount} mais barato",
+    priceDiffSame: "mesmo preço",
+    priceDiffMore: "R$ {amount} a mais",
+    // Explicação site oficial
+    officialBenefit1: "melhor suporte pós-venda",
+    officialBenefit2: "sem intermediários",
+    // Informações úteis
+    flightInfo: "informações do voo",
+    baggageIncluded: "bagagem de mão incluída",
+    baggageNotIncluded: "bagagem despachada não incluída",
+    changePolicy: "alteração permitida com taxa",
+    refundPolicy: "reembolso parcial disponível",
+    layoverInfo: "escala",
+    layoverDuration: "{duration} em {city}",
   },
   footer: {
     disclaimer: "Preços estimados. Redirecionamos para parceiros.",
@@ -303,5 +388,47 @@ export const pt: Messages = {
     newSearch: "nova busca",
     globalTitle: "ops, algo deu errado",
     globalMessage: "houve um problema ao carregar a página. tente novamente.",
+  },
+  faq: {
+    title: "perguntas frequentes",
+    subtitle: "tudo o que você precisa saber antes de comprar",
+    questions: {
+      howFindPrices: {
+        q: "como o navo encontra os preços das passagens?",
+        a: "buscamos preços em tempo real de companhias aéreas e agências de viagem parceiras, comparando as melhores ofertas para você.",
+      },
+      doBuyHere: {
+        q: "eu compro a passagem pelo navo?",
+        a: "não. o navo é um comparador. você escolhe a melhor oferta e te redirecionamos para o site do parceiro para finalizar a compra.",
+      },
+      anyFees: {
+        q: "o navo cobra alguma taxa?",
+        a: "não cobramos nenhuma taxa. o preço que você vê é o preço que você paga no site do parceiro.",
+      },
+      priceChange: {
+        q: "o preço pode mudar depois?",
+        a: "sim. preços de passagens são dinâmicos e podem variar. sempre confirme o valor final no site do parceiro antes de comprar.",
+      },
+      whatIsBestBalance: {
+        q: "o que é o 'melhor equilíbrio'?",
+        a: "é o voo que oferece a melhor relação entre preço e duração. nem sempre o mais barato é o melhor quando consideramos o tempo de viagem.",
+      },
+      whatIsPriceAlert: {
+        q: "o que é um alerta de preço?",
+        a: "é uma notificação que você recebe quando o preço de uma rota que você está monitorando cair. assim você não perde promoções.",
+      },
+      trustPartners: {
+        q: "posso confiar nos sites para onde sou redirecionado?",
+        a: "trabalhamos apenas com companhias aéreas oficiais e agências de viagem conhecidas no mercado.",
+      },
+      sellHotels: {
+        q: "o navo vende hotéis ou carros?",
+        a: "por enquanto, focamos apenas em passagens aéreas. queremos fazer isso muito bem antes de expandir.",
+      },
+      priceUpdateFrequency: {
+        q: "com que frequência os preços são atualizados?",
+        a: "buscamos preços em tempo real a cada pesquisa. os dados que você vê são sempre atuais.",
+      },
+    },
   },
 };

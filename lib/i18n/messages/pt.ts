@@ -132,6 +132,16 @@ export interface Messages {
       title: string;
     };
   };
+  error: {
+    title: string;
+    message: string;
+    supportCode: string;
+    noCode: string;
+    goHome: string;
+    newSearch: string;
+    globalTitle: string;
+    globalMessage: string;
+  };
 }
 
 export const pt: Messages = {
@@ -267,5 +277,15 @@ export const pt: Messages = {
     privacy: {
       title: "política de privacidade",
     },
+  },
+  error: {
+    title: "algo deu errado",
+    message: "ocorreu um erro inesperado. por favor, tente novamente.",
+    supportCode: "código de suporte: {code}",
+    noCode: "erro sem código",
+    goHome: "voltar para home",
+    newSearch: "nova busca",
+    globalTitle: "ops, algo deu errado",
+    globalMessage: "houve um problema ao carregar a página. tente novamente.",
   },
 };

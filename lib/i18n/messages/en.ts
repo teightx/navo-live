@@ -151,5 +151,17 @@ export const en: Messages = {
       title: "privacy policy",
     },
   },
+
+  // Error Boundary
+  error: {
+    title: "something went wrong",
+    message: "an unexpected error occurred. please try again.",
+    supportCode: "support code: {code}",
+    noCode: "error without code",
+    goHome: "back to home",
+    newSearch: "new search",
+    globalTitle: "oops, something went wrong",
+    globalMessage: "there was a problem loading the page. please try again.",
+  },
 } as const;
 

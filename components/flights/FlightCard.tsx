@@ -1,11 +1,13 @@
 "use client";
 
-import { FlightResult, formatPrice } from "@/lib/mocks/flights";
+import { formatPrice } from "@/lib/mocks/flights";
+import type { FlightResult } from "@/lib/search/types";
 import { useI18n } from "@/lib/i18n";
 import { useState } from "react";
 import { PriceInsightBadge } from "@/components/price/PriceInsightBadge";
 import { getPriceInsight } from "@/lib/mocks/priceInsight";
 import type { SearchState } from "@/lib/types/search";
+import { AirlineLogo } from "./AirlineLogo";
 
 interface FlightCardProps {
   flight: FlightResult;
@@ -16,29 +18,6 @@ interface FlightCardProps {
     priceDifference: number;
   } | null;
   searchState?: SearchState;
-}
-
-const AIRLINE_COLORS: Record<string, string> = {
-  latam: "#E4002B",
-  tap: "#00B2A9",
-  azul: "#0033A0",
-  iberia: "#D30032",
-  "air france": "#002157",
-  gol: "#FF6600",
-  lufthansa: "#05164D",
-};
-
-function AirlineLogo({ airline, code }: { airline: string; code: string }) {
-  const color = AIRLINE_COLORS[airline] || "#4f7386";
-  
-  return (
-    <div 
-      className="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold text-white"
-      style={{ backgroundColor: color }}
-    >
-      {code}
-    </div>
-  );
 }
 
 export function FlightCard({ flight, onClick, isBestOffer = false, bestOfferInfo = null, searchState }: FlightCardProps) {
@@ -119,7 +98,7 @@ export function FlightCard({ flight, onClick, isBestOffer = false, bestOfferInfo
           
           {/* Coluna 1: Companhia */}
           <div className="flex items-center gap-3 sm:w-32 sm:flex-shrink-0">
-            <AirlineLogo airline={flight.airline} code={flight.airlineCode} />
+            <AirlineLogo code={flight.airlineCode} name={flight.airline} />
             <div className="sm:hidden">
               <div className="text-sm font-medium text-ink capitalize">
                 {flight.airline}

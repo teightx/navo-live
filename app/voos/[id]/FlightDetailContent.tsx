@@ -12,6 +12,7 @@ import { useI18n } from "@/lib/i18n";
 import { trackPartnerClick } from "@/lib/analytics/tracking";
 import { parseSearchParams, normalizeSearchState } from "@/lib/utils/searchParams";
 import { PartnerLogo } from "@/components/partners/PartnerLogo";
+import { AirlineLogo } from "@/components/flights";
 import { PriceInsightBadge } from "@/components/price/PriceInsightBadge";
 import { getPriceInsight } from "@/lib/mocks/priceInsight";
 
@@ -206,15 +207,7 @@ export function FlightDetailContent() {
               >
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
-                    <div 
-                      className="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold"
-                      style={{ 
-                        backgroundColor: "var(--blue)", 
-                        color: "var(--cream-soft)" 
-                      }}
-                    >
-                      {flight.airlineCode}
-                    </div>
+                    <AirlineLogo code={flight.airlineCode} name={flight.airline} />
                     <div>
                       <div className="text-sm font-medium text-ink capitalize">{flight.airline}</div>
                       <div className="text-xs text-ink-muted">{flight.duration}</div>
@@ -322,15 +315,7 @@ export function FlightDetailContent() {
                 >
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div 
-                        className="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold"
-                        style={{ 
-                          backgroundColor: "var(--blue)", 
-                          color: "var(--cream-soft)" 
-                        }}
-                      >
-                        {flight.airlineCode}
-                      </div>
+                      <AirlineLogo code={flight.airlineCode} name={flight.airline} />
                       <div>
                         <div className="text-sm font-medium text-ink capitalize">{flight.airline}</div>
                         <div className="text-xs text-ink-muted">{t.flightDetails.officialSite || "site oficial"}</div>

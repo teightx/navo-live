@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
 import { serializeSearchState } from "@/lib/utils/searchParams";
 import { defaultSearchState } from "@/lib/types/search";
@@ -270,42 +270,26 @@ function HolidaySection({
   locale,
   onRouteClick,
 }: HolidaySectionProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
-
+  // State for active card index (starts at 0)
+  const [activeIndex, setActiveIndex] = useState(0);
   const daysText = locale === "pt" ? "dias" : "days";
 
-  function updateScrollButtons() {
-    if (!scrollRef.current) return;
-    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-    setCanScrollLeft(scrollLeft > 0);
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+  // Ensure we have routes
+  if (routes.length === 0) return null;
+
+  // Navigation functions - move one card at a time
+  function goToPrev() {
+    setActiveIndex((prev) => (prev === 0 ? routes.length - 1 : prev - 1));
   }
 
-  function scrollLeftFn() {
-    if (!scrollRef.current) return;
-    scrollRef.current.scrollBy({ left: -280, behavior: "smooth" });
+  function goToNext() {
+    setActiveIndex((prev) => (prev === routes.length - 1 ? 0 : prev + 1));
   }
 
-  function scrollRightFn() {
-    if (!scrollRef.current) return;
-    scrollRef.current.scrollBy({ left: 280, behavior: "smooth" });
-  }
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-
-    updateScrollButtons();
-    el.addEventListener("scroll", updateScrollButtons);
-    window.addEventListener("resize", updateScrollButtons);
-
-    return () => {
-      el.removeEventListener("scroll", updateScrollButtons);
-      window.removeEventListener("resize", updateScrollButtons);
-    };
-  }, [routes]);
+  // Calculate translateX for slide animation
+  // Each card is 100% width (1 card per view)
+  // Moving one card = 100% of container + gap
+  const cardOffset = activeIndex * 100; // 100% per card
 
   return (
     <div>
@@ -317,29 +301,13 @@ function HolidaySection({
         </span>
       </div>
 
-      {/* Mobile: Horizontal scroll carousel with floating arrows */}
-      <div className="sm:hidden relative">
-        {/* Left fade gradient */}
-        <div
-          className="absolute left-0 top-0 bottom-2 w-8 z-10 pointer-events-none"
-          style={{
-            background: "linear-gradient(to right, var(--cream), transparent)",
-          }}
-        />
-
-        {/* Right fade gradient */}
-        <div
-          className="absolute right-0 top-0 bottom-2 w-8 z-10 pointer-events-none"
-          style={{
-            background: "linear-gradient(to left, var(--cream), transparent)",
-          }}
-        />
-
-        {/* Left arrow button - floating between cards */}
-        {canScrollLeft && (
+      {/* Mobile: Carousel with 1 card per view and slide animation */}
+      <div className="sm:hidden relative py-4">
+        <div className="flex items-center gap-2 px-2">
+          {/* Left arrow button */}
           <button
-            onClick={scrollLeftFn}
-            className="absolute left-1 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full shadow-lg border transition-all hover:scale-105 active:scale-95"
+            onClick={goToPrev}
+            className="flex-shrink-0 p-2 rounded-full border transition-colors hover:bg-cream-dark/30 z-10"
             style={{
               background: "var(--card-bg)",
               borderColor: "var(--card-border)",
@@ -348,13 +316,34 @@ function HolidaySection({
           >
             <ChevronLeftIcon className="w-5 h-5" />
           </button>
-        )}
 
-        {/* Right arrow button - floating between cards */}
-        {canScrollRight && (
+          {/* Cards container with overflow hidden */}
+          <div className="flex-1 overflow-hidden relative">
+            <div
+              className="flex gap-4 transition-transform duration-500 ease-in-out"
+              style={{
+                transform: `translateX(calc(-${cardOffset}% - ${activeIndex * 16}px))`,
+                willChange: "transform",
+              }}
+            >
+              {routes.map((route) => (
+                <div
+                  key={route.id}
+                  className="flex-shrink-0 w-full"
+                >
+                  <SmartRouteCardComponent
+                    route={route}
+                    onClick={() => onRouteClick(route)}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right arrow button */}
           <button
-            onClick={scrollRightFn}
-            className="absolute right-1 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full shadow-lg border transition-all hover:scale-105 active:scale-95"
+            onClick={goToNext}
+            className="flex-shrink-0 p-2 rounded-full border transition-colors hover:bg-cream-dark/30 z-10"
             style={{
               background: "var(--card-bg)",
               borderColor: "var(--card-border)",
@@ -363,31 +352,23 @@ function HolidaySection({
           >
             <ChevronRightIcon className="w-5 h-5" />
           </button>
-        )}
-
-        {/* Scrollable container */}
-        <div
-          ref={scrollRef}
-          className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2"
-          style={{
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-            paddingLeft: "calc(50% - 130px)", // Center first card (half container - half card width)
-            paddingRight: "calc(50% - 130px)",
-          }}
-        >
-          {routes.map((route) => (
-            <div
-              key={route.id}
-              className="flex-shrink-0 w-[260px] snap-center"
-            >
-              <SmartRouteCardComponent
-                route={route}
-                onClick={() => onRouteClick(route)}
-              />
-            </div>
-          ))}
         </div>
+      </div>
+
+      {/* Pagination dots */}
+      <div className="sm:hidden flex justify-center gap-1.5 mt-2">
+        {routes.map((_, idx) => (
+          <button
+            key={idx}
+            onClick={() => setActiveIndex(idx)}
+            className={`w-2 h-2 rounded-full transition-all ${
+              idx === activeIndex
+                ? "bg-blue w-4"
+                : "bg-ink/20 hover:bg-ink/40"
+            }`}
+            aria-label={`Ir para card ${idx + 1}`}
+          />
+        ))}
       </div>
 
       {/* Desktop: Grid layout */}

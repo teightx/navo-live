@@ -283,12 +283,12 @@ function HolidaySection({
     setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
   }
 
-  function scrollLeft() {
+  function scrollLeftFn() {
     if (!scrollRef.current) return;
     scrollRef.current.scrollBy({ left: -280, behavior: "smooth" });
   }
 
-  function scrollRight() {
+  function scrollRightFn() {
     if (!scrollRef.current) return;
     scrollRef.current.scrollBy({ left: 280, behavior: "smooth" });
   }
@@ -309,63 +309,85 @@ function HolidaySection({
 
   return (
     <div>
-      {/* Holiday header with navigation arrows on mobile */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <h3 className="text-base font-medium text-ink capitalize">{name}</h3>
-          <span className="text-xs text-ink-muted">
-            {dates} · {tripDays} {daysText}
-          </span>
-        </div>
-
-        {/* Mobile carousel arrows */}
-        <div className="flex items-center gap-1 sm:hidden">
-          <button
-            onClick={scrollLeft}
-            disabled={!canScrollLeft}
-            className={`p-1.5 rounded-full border transition-all ${
-              canScrollLeft
-                ? "border-ink/20 text-ink hover:bg-cream-dark/50"
-                : "border-ink/10 text-ink/30 cursor-not-allowed"
-            }`}
-            style={{ background: "var(--card-bg)" }}
-            aria-label="Anterior"
-          >
-            <ChevronLeftIcon />
-          </button>
-          <button
-            onClick={scrollRight}
-            disabled={!canScrollRight}
-            className={`p-1.5 rounded-full border transition-all ${
-              canScrollRight
-                ? "border-ink/20 text-ink hover:bg-cream-dark/50"
-                : "border-ink/10 text-ink/30 cursor-not-allowed"
-            }`}
-            style={{ background: "var(--card-bg)" }}
-            aria-label="Próximo"
-          >
-            <ChevronRightIcon />
-          </button>
-        </div>
+      {/* Holiday header */}
+      <div className="flex items-center gap-3 mb-4">
+        <h3 className="text-base font-medium text-ink capitalize">{name}</h3>
+        <span className="text-xs text-ink-muted">
+          {dates} · {tripDays} {daysText}
+        </span>
       </div>
 
-      {/* Mobile: Horizontal scroll carousel */}
-      <div
-        ref={scrollRef}
-        className="sm:hidden flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-4 px-4 pb-2"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        {routes.map((route) => (
-          <div
-            key={route.id}
-            className="flex-shrink-0 w-[260px] snap-start"
+      {/* Mobile: Horizontal scroll carousel with floating arrows */}
+      <div className="sm:hidden relative">
+        {/* Left fade gradient */}
+        <div
+          className="absolute left-0 top-0 bottom-2 w-8 z-10 pointer-events-none"
+          style={{
+            background: "linear-gradient(to right, var(--cream), transparent)",
+          }}
+        />
+
+        {/* Right fade gradient */}
+        <div
+          className="absolute right-0 top-0 bottom-2 w-8 z-10 pointer-events-none"
+          style={{
+            background: "linear-gradient(to left, var(--cream), transparent)",
+          }}
+        />
+
+        {/* Left arrow button - floating between cards */}
+        {canScrollLeft && (
+          <button
+            onClick={scrollLeftFn}
+            className="absolute left-1 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full shadow-lg border transition-all hover:scale-105 active:scale-95"
+            style={{
+              background: "var(--card-bg)",
+              borderColor: "var(--card-border)",
+            }}
+            aria-label="Anterior"
           >
-            <SmartRouteCardComponent
-              route={route}
-              onClick={() => onRouteClick(route)}
-            />
-          </div>
-        ))}
+            <ChevronLeftIcon className="w-5 h-5" />
+          </button>
+        )}
+
+        {/* Right arrow button - floating between cards */}
+        {canScrollRight && (
+          <button
+            onClick={scrollRightFn}
+            className="absolute right-1 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full shadow-lg border transition-all hover:scale-105 active:scale-95"
+            style={{
+              background: "var(--card-bg)",
+              borderColor: "var(--card-border)",
+            }}
+            aria-label="Próximo"
+          >
+            <ChevronRightIcon className="w-5 h-5" />
+          </button>
+        )}
+
+        {/* Scrollable container */}
+        <div
+          ref={scrollRef}
+          className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2"
+          style={{
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            paddingLeft: "calc(50% - 130px)", // Center first card (half container - half card width)
+            paddingRight: "calc(50% - 130px)",
+          }}
+        >
+          {routes.map((route) => (
+            <div
+              key={route.id}
+              className="flex-shrink-0 w-[260px] snap-center"
+            >
+              <SmartRouteCardComponent
+                route={route}
+                onClick={() => onRouteClick(route)}
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Desktop: Grid layout */}

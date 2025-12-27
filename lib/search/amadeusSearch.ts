@@ -7,8 +7,7 @@
  */
 
 import "server-only";
-import type { SearchState } from "@/lib/types/search";
-import type { FlightResult } from "@/lib/mocks/flights";
+import type { SearchState, FlightResult } from "@/lib/search/types";
 import { mockSearch, type SearchResult } from "./mockSearch";
 import { searchFlightsAmadeus, isAmadeusConfigured } from "@/lib/amadeus";
 

@@ -13,8 +13,7 @@ import type {
   AmadeusTravelClass,
   FlightSearchRequest,
 } from "./types";
-import type { CabinClass, SearchState } from "@/lib/types/search";
-import type { FlightResult } from "@/lib/mocks/flights";
+import type { CabinClass, SearchState, FlightResult } from "@/lib/search/types";
 
 // ============================================================================
 // Mapping Helpers

@@ -1,9 +1,14 @@
-export interface Airport {
-  code: string;
-  city: string;
-  country: string;
-  name: string;
-}
+/**
+ * Airport Mocks
+ *
+ * Mock data for airport autocomplete
+ * Types are re-exported from the canonical source
+ */
+
+import type { Airport } from "@/lib/search/types";
+
+// Re-export Airport for backwards compatibility
+export type { Airport } from "@/lib/search/types";
 
 export const airports: Airport[] = [
   { code: "GRU", city: "são paulo", country: "brasil", name: "aeroporto internacional de guarulhos" },

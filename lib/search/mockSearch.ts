@@ -1,10 +1,13 @@
-import { getMockFlights, type FlightResult } from "@/lib/mocks/flights";
-import type { SearchState } from "@/lib/types/search";
+import { getMockFlights } from "@/lib/mocks/flights";
+import type { SearchState, FlightResult } from "@/lib/search/types";
 
 export interface SearchResult {
   flights: FlightResult[];
   error?: string;
 }
+
+// Re-export for backwards compatibility
+export type { FlightResult } from "@/lib/search/types";
 
 /**
  * Mock search function with delay simulation

@@ -1,22 +1,14 @@
-import type { SearchState } from "@/lib/types/search";
-
 /**
- * FlightResult - Type definition for flight search results
+ * Flight Mocks
+ *
+ * Mock data for flight search results
+ * Types are re-exported from the canonical source
  */
-export interface FlightResult {
-  id: string;
-  airline: string;
-  airlineCode: string;
-  departure: string;
-  arrival: string;
-  duration: string;
-  stops: string;
-  stopsCities?: string[];
-  price: number;
-  offersCount: number;
-  co2?: string;
-  nextDayArrival?: boolean;
-}
+
+import type { SearchState, FlightResult } from "@/lib/search/types";
+
+// Re-export FlightResult for backwards compatibility
+export type { FlightResult } from "@/lib/search/types";
 
 const AIRLINE_CODES: Record<string, string> = {
   latam: "LA",

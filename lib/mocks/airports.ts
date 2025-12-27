@@ -1,8 +1,16 @@
 /**
- * Airport Mocks
+ * @deprecated Use lib/airports instead.
  *
- * Mock data for airport autocomplete
- * Types are re-exported from the canonical source
+ * This file is deprecated and should not be used in production code.
+ * All airport data and search functionality has been moved to:
+ *
+ *   - lib/data/airports.json (real dataset)
+ *   - lib/airports/index.ts (search and lookup functions)
+ *
+ * This file is kept only for backwards compatibility during migration.
+ * It will be removed in a future version.
+ *
+ * @see lib/airports/index.ts
  */
 
 import type { Airport } from "@/lib/search/types";
@@ -10,6 +18,9 @@ import type { Airport } from "@/lib/search/types";
 // Re-export Airport for backwards compatibility
 export type { Airport } from "@/lib/search/types";
 
+/**
+ * @deprecated Use lib/airports instead.
+ */
 export const airports: Airport[] = [
   { code: "GRU", city: "são paulo", country: "brasil", name: "aeroporto internacional de guarulhos" },
   { code: "CGH", city: "são paulo", country: "brasil", name: "aeroporto de congonhas" },
@@ -33,23 +44,43 @@ export const airports: Airport[] = [
   { code: "FCO", city: "roma", country: "itália", name: "aeroporto leonardo da vinci" },
 ];
 
+/**
+ * @deprecated Use lib/airports searchAirports instead.
+ */
 export function searchAirports(query: string): Airport[] {
+  console.warn(
+    "[DEPRECATED] lib/mocks/airports.searchAirports is deprecated. Use lib/airports instead."
+  );
   if (!query || query.length < 2) return [];
-  
+
   const q = query.toLowerCase();
-  
-  return airports.filter((airport) =>
-    airport.city.includes(q) ||
-    airport.code.toLowerCase().includes(q) ||
-    airport.name.includes(q)
-  ).slice(0, 6);
+
+  return airports
+    .filter(
+      (airport) =>
+        airport.city.includes(q) ||
+        airport.code.toLowerCase().includes(q) ||
+        airport.name.includes(q)
+    )
+    .slice(0, 6);
 }
 
+/**
+ * @deprecated Use lib/airports getAirportByCode instead.
+ */
 export function getAirportByCode(code: string): Airport | undefined {
+  console.warn(
+    "[DEPRECATED] lib/mocks/airports.getAirportByCode is deprecated. Use lib/airports instead."
+  );
   return airports.find((a) => a.code.toLowerCase() === code.toLowerCase());
 }
 
+/**
+ * @deprecated Use lib/airports formatAirport instead.
+ */
 export function formatAirport(airport: Airport): string {
+  console.warn(
+    "[DEPRECATED] lib/mocks/airports.formatAirport is deprecated. Use lib/airports instead."
+  );
   return `${airport.city} (${airport.code.toLowerCase()})`;
 }
-

@@ -8,10 +8,10 @@ import { Footer, ThemeToggle, LanguageToggle } from "@/components/layout";
 import { BackgroundWaves, SearchModal } from "@/components/ui";
 import { FlightCard } from "@/components/flights";
 import { ResultsFilters, type FilterType } from "@/components/results";
-import { FlightResult } from "@/lib/mocks/flights";
-import { mockSearch } from "@/lib/search/mockSearch";
 import { useI18n } from "@/lib/i18n";
-import type { SearchState } from "@/lib/types/search";
+import type { SearchState, FlightResult } from "@/lib/search/types";
+import { searchFlights } from "@/lib/search/searchFlights";
+import { mockSearch } from "@/lib/search/mockSearch";
 import { parseSearchParams, normalizeSearchState, serializeSearchState } from "@/lib/utils/searchParams";
 import { findBestOffer, calculateAveragePrice, calculateScore, parseDurationToMinutes } from "@/lib/utils/bestOffer";
 import { saveSearch, removeSearch, isSearchSaved } from "@/lib/utils/savedSearches";
@@ -152,39 +152,67 @@ function ResultsContent() {
       return;
     }
 
-    let cancelled = false;
+    const abortController = new AbortController();
 
-    async function searchFlights() {
+    async function doSearch() {
       setIsLoading(true);
       setError(null);
       
       try {
-        const result = await mockSearch(searchState, {
-          forceEmpty,
-          forceError,
-          delay: Math.random() * 300 + 600, // 600-900ms
+        // Flags de teste: usar mock diretamente
+        if (forceEmpty || forceError) {
+          const result = await mockSearch(searchState, {
+            forceEmpty,
+            forceError,
+            delay: Math.random() * 300 + 600,
+          });
+          
+          if (!abortController.signal.aborted) {
+            setResults(result.flights);
+            setError(null);
+          }
+          return;
+        }
+
+        // Busca real via API
+        const result = await searchFlights(searchState, {
+          max: 20,
+          signal: abortController.signal,
         });
         
-        if (!cancelled) {
-          setResults(result.flights);
-          setError(null);
+        if (!abortController.signal.aborted) {
+          if (result.error) {
+            // Se AMADEUS_DISABLED, usar mock como fallback
+            if (result.error.code === "AMADEUS_DISABLED") {
+              console.log("[Results] Amadeus disabled, using mock");
+              const mockResult = await mockSearch(searchState);
+              setResults(mockResult.flights);
+              setError(null);
+            } else {
+              setError(result.error.message);
+              setResults([]);
+            }
+          } else {
+            setResults(result.flights);
+            setError(null);
+          }
         }
       } catch (err) {
-        if (!cancelled) {
+        if (!abortController.signal.aborted) {
           setError(err instanceof Error ? err.message : "Erro desconhecido");
           setResults([]);
         }
       } finally {
-        if (!cancelled) {
+        if (!abortController.signal.aborted) {
           setIsLoading(false);
         }
       }
     }
 
-    searchFlights();
+    doSearch();
 
     return () => {
-      cancelled = true;
+      abortController.abort();
     };
     // searchKey já captura todas as mudanças relevantes (from, to, depart, returnDate, forceEmpty, forceError)
     // searchState é memoizado e só muda quando searchParams muda, que é capturado por searchKey
@@ -294,28 +322,48 @@ function ResultsContent() {
     }
   }
 
-  function handleRetry() {
+  async function handleRetry() {
     if (!searchState.from || !searchState.to) return;
     
     setIsLoading(true);
     setError(null);
     
-    mockSearch(searchState, {
-      forceEmpty,
-      forceError,
-      delay: Math.random() * 300 + 600,
-    })
-      .then((result) => {
+    try {
+      // Flags de teste: usar mock
+      if (forceEmpty || forceError) {
+        const result = await mockSearch(searchState, {
+          forceEmpty,
+          forceError,
+          delay: Math.random() * 300 + 600,
+        });
         setResults(result.flights);
         setError(null);
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : "Erro desconhecido");
-        setResults([]);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+        return;
+      }
+
+      // Busca real via API
+      const result = await searchFlights(searchState, { max: 20 });
+      
+      if (result.error) {
+        // Fallback para mock se Amadeus desabilitado
+        if (result.error.code === "AMADEUS_DISABLED") {
+          const mockResult = await mockSearch(searchState);
+          setResults(mockResult.flights);
+          setError(null);
+        } else {
+          setError(result.error.message);
+          setResults([]);
+        }
+      } else {
+        setResults(result.flights);
+        setError(null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
+      setResults([]);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (

@@ -22,6 +22,7 @@ import {
 import { getPriceHistoryForRoute } from "@/lib/price/history";
 import { getAirportByCode } from "@/lib/airports";
 import { createRequestLogger } from "@/lib/logging/logger";
+import { generateMockPriceWithOrigin } from "@/lib/price/mockPrices";
 
 // ============================================================================
 // Types
@@ -189,6 +190,20 @@ export async function getSmartPopularRoutes(
         const sampleCount = priceHistory?.count ?? 0;
         const hasReliableData = sampleCount >= MIN_SAMPLES_FOR_PRICE;
 
+        // Use real price if available, otherwise use mock price
+        let price: number;
+        if (hasReliableData && priceHistory?.minPrice) {
+          price = priceHistory.minPrice;
+        } else {
+          // Generate mock price (deterministic, updates every 24h)
+          price = generateMockPriceWithOrigin(
+            origin,
+            dest.code,
+            window.key,
+            origin // Use origin as seed for variation
+          );
+        }
+
         routes.push({
           id: `${window.key}-${dest.code}`,
           from: origin,
@@ -201,7 +216,7 @@ export async function getSmartPopularRoutes(
           departDate: window.startDate,
           returnDate: window.endDate,
           tripDays: window.days,
-          price: hasReliableData ? priceHistory?.minPrice : undefined,
+          price, // Always has a price now (real or mock)
           sampleCount,
           hasReliableData,
         });
@@ -213,7 +228,14 @@ export async function getSmartPopularRoutes(
           message: error instanceof Error ? error.message : "Unknown error",
         });
 
-        // Still add the card without price
+        // Use mock price on error
+        const mockPrice = generateMockPriceWithOrigin(
+          origin,
+          dest.code,
+          window.key,
+          origin
+        );
+
         routes.push({
           id: `${window.key}-${dest.code}`,
           from: origin,
@@ -226,7 +248,7 @@ export async function getSmartPopularRoutes(
           departDate: window.startDate,
           returnDate: window.endDate,
           tripDays: window.days,
-          price: undefined,
+          price: mockPrice,
           sampleCount: 0,
           hasReliableData: false,
         });

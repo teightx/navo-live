@@ -419,7 +419,9 @@ export function OpportunitiesSection() {
         setError(null);
 
         if (isSmartMode) {
-          const res = await fetch(`/api/routes/smart-popular?from=${detectedOrigin}`);
+          // Add timestamp to bust cache when origin changes
+          const cacheKey = Math.floor(Date.now() / 60000); // Changes every minute
+          const res = await fetch(`/api/routes/smart-popular?from=${detectedOrigin}&_t=${cacheKey}`);
 
           if (!res.ok) {
             throw new Error(`Failed to fetch: ${res.status}`);

@@ -85,6 +85,14 @@ export const en: Messages = {
     rateLimitMessage: "you've made too many searches in a short time. please wait a few seconds and try again.",
     rateLimitRetry: "try again in {seconds}s",
     requestCode: "code: {code}",
+    // Decision labels (selos)
+    labelBestBalance: "best balance",
+    labelCheapest: "cheapest",
+    labelFastest: "fastest",
+    // Price context
+    priceContextBelowAverage: "below average",
+    priceContextAverage: "average price",
+    priceContextAboveAverage: "pricey now",
   },
 
   // Flight Details

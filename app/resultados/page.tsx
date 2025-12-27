@@ -15,6 +15,7 @@ import { mockSearch } from "@/lib/search/mockSearch";
 import { parseSearchParams, normalizeSearchState, serializeSearchState } from "@/lib/utils/searchParams";
 import { findBestOffer, calculateAveragePrice, calculateScore, parseDurationToMinutes } from "@/lib/utils/bestOffer";
 import { saveSearch, removeSearch, isSearchSaved } from "@/lib/utils/savedSearches";
+import { addDecisionLabels, getHumanMessageDeterministic, type FlightWithLabels } from "@/lib/flights";
 
 // ============================================================================
 // Types
@@ -378,9 +379,17 @@ function ResultsContent() {
     return () => abortController.abort();
   }, [searchKey, performSearch]);
 
-  // Ordenar resultados baseado no filtro
-  const sortedResults = useMemo(() => {
-    const sorted = [...results].sort((a, b) => {
+  // Processar resultados com labels de decisão
+  const { labeledFlights, humanMessage } = useMemo(() => {
+    if (results.length === 0) {
+      return { labeledFlights: [] as FlightWithLabels[], humanMessage: "" };
+    }
+    
+    // Adicionar labels (best_balance, cheapest, fastest) e contexto de preço
+    const { flights: labeled } = addDecisionLabels(results);
+    
+    // Ordenar baseado no filtro ativo
+    const sorted = [...labeled].sort((a, b) => {
       if (activeFilter === "price") return a.price - b.price;
       if (activeFilter === "duration") {
         const durA = parseDurationToMinutes(a.duration);
@@ -392,10 +401,15 @@ function ResultsContent() {
       const scoreB = calculateScore(b);
       return scoreA - scoreB;
     });
-    return sorted;
-  }, [results, activeFilter]);
+    
+    // Gerar mensagem humana determinística (baseada no count)
+    const message = getHumanMessageDeterministic(sorted.length, locale as "pt" | "en");
+    
+    return { labeledFlights: sorted, humanMessage: message };
+  }, [results, activeFilter, locale]);
 
   // Calcular qual é a melhor oferta (baseado na lista original, não ordenada)
+  // Mantido para compatibilidade com bestOfferInfo
   const bestOfferFlightId = useMemo(() => {
     if (results.length === 0) return null;
     const bestIndex = findBestOffer(results);
@@ -543,20 +557,21 @@ function ResultsContent() {
             <h1 className="text-xl sm:text-2xl font-medium text-ink lowercase">
               {t.results.flightsTo} {searchState.to?.city || to}
             </h1>
+            {/* Mensagem humana ou status */}
             <p className="text-ink-muted text-sm mt-1">
               {isLoading 
                 ? t.results.searching
                 : errorInfo
                   ? t.results.errorTitle
-                  : sortedResults.length === 0
+                  : labeledFlights.length === 0
                     ? t.results.noResults
-                    : `${sortedResults.length} ${t.results.optionsFound}`
+                    : humanMessage
               }
             </p>
           </div>
 
           {/* Filtros */}
-          {!isLoading && !errorInfo && sortedResults.length > 0 && (
+          {!isLoading && !errorInfo && labeledFlights.length > 0 && (
             <div className="mb-6">
               <ResultsFilters 
                 activeFilter={activeFilter}
@@ -581,14 +596,13 @@ function ResultsContent() {
               onRetry={handleRetry} 
               onEditSearch={handleEditSearch}
             />
-          ) : sortedResults.length === 0 ? (
+          ) : labeledFlights.length === 0 ? (
             <EmptyState onEditSearch={handleEditSearch} />
           ) : (
             <div className="space-y-4">
-              {sortedResults.map((flight) => {
-                // Verificar se este voo é a melhor oferta (comparando por ID)
-                const isBestOffer = bestOfferFlightId === flight.id;
-                const bestOfferInfo = isBestOffer 
+              {labeledFlights.map((flight) => {
+                // Info para tooltip do best_balance (compatibilidade)
+                const bestOfferInfo = flight.label === "best_balance"
                   ? { 
                       explanation: t.results.bestOfferExplanation,
                       priceDifference: calculateAveragePrice(results) - flight.price,
@@ -600,7 +614,9 @@ function ResultsContent() {
                     key={flight.id}
                     flight={flight} 
                     onClick={() => handleFlightClick(flight)}
-                    isBestOffer={isBestOffer}
+                    label={flight.label}
+                    priceContext={flight.priceContext}
+                    isHighlighted={flight.isHighlighted}
                     bestOfferInfo={bestOfferInfo}
                   />
                 );

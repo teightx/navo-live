@@ -74,6 +74,14 @@ export interface Messages {
     rateLimitMessage: string;
     rateLimitRetry: string;
     requestCode: string;
+    // Decision labels (selos)
+    labelBestBalance: string;
+    labelCheapest: string;
+    labelFastest: string;
+    // Price context
+    priceContextBelowAverage: string;
+    priceContextAverage: string;
+    priceContextAboveAverage: string;
   };
   flightDetails: {
     departure: string;
@@ -220,6 +228,14 @@ export const pt: Messages = {
     rateLimitMessage: "você fez muitas buscas em pouco tempo. aguarde alguns segundos e tente novamente.",
     rateLimitRetry: "tentar novamente em {seconds}s",
     requestCode: "código: {code}",
+    // Decision labels (selos)
+    labelBestBalance: "melhor equilíbrio",
+    labelCheapest: "mais barato",
+    labelFastest: "mais rápido",
+    // Price context
+    priceContextBelowAverage: "abaixo do normal",
+    priceContextAverage: "na média",
+    priceContextAboveAverage: "caro agora",
   },
   flightDetails: {
     departure: "partida",

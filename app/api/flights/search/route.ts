@@ -4,11 +4,18 @@
  * GET /api/flights/search
  *
  * Internal endpoint that calls Amadeus Flight Offers Search
- * Returns raw Amadeus response for validation purposes
+ * Returns normalized SearchResponse format
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { amadeusFetch, AmadeusError } from "@/lib/amadeus";
+import {
+  amadeusFetch,
+  AmadeusError,
+  mapFlightOffersToSearchResponse,
+  createSearchResponse,
+  type AmadeusFlightOffersResponse,
+} from "@/lib/amadeus";
+import type { SearchResponse, SearchError } from "@/lib/search/types";
 
 // ============================================================================
 // Types
@@ -16,7 +23,7 @@ import { amadeusFetch, AmadeusError } from "@/lib/amadeus";
 
 interface CacheEntry {
   expiresAtMs: number;
-  data: unknown;
+  data: SearchResponse;
 }
 
 interface ValidationError {
@@ -65,7 +72,7 @@ function getCacheKey(params: ValidatedParams): string {
   });
 }
 
-function getFromCache(key: string): unknown | null {
+function getFromCache(key: string): SearchResponse | null {
   const entry = cache.get(key);
   if (!entry) return null;
 
@@ -77,7 +84,7 @@ function getFromCache(key: string): unknown | null {
   return entry.data;
 }
 
-function setCache(key: string, data: unknown): void {
+function setCache(key: string, data: SearchResponse): void {
   cache.set(key, {
     expiresAtMs: Date.now() + CACHE_TTL_MS,
     data,
@@ -217,20 +224,18 @@ function validateParams(searchParams: URLSearchParams): {
  * - max: 1-50 (default: 20)
  * - currency: currency code (default: BRL)
  *
- * Returns raw Amadeus response or error
+ * Returns: SearchResponse (normalized format)
  */
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
 
   // Check feature flag
   if (process.env.USE_AMADEUS !== "true") {
-    return NextResponse.json(
-      {
-        code: "AMADEUS_DISABLED",
-        message: "Amadeus integration is disabled. Set USE_AMADEUS=true to enable.",
-      },
-      { status: 503 }
-    );
+    const error: SearchError = {
+      code: "AMADEUS_DISABLED",
+      message: "Amadeus integration is disabled. Set USE_AMADEUS=true to enable.",
+    };
+    return NextResponse.json(error, { status: 503 });
   }
 
   // Parse and validate query params
@@ -238,14 +243,12 @@ export async function GET(request: NextRequest) {
   const validation = validateParams(searchParams);
 
   if (!validation.valid) {
-    return NextResponse.json(
-      {
-        code: "VALIDATION_ERROR",
-        message: "Invalid request parameters",
-        errors: validation.errors,
-      },
-      { status: 400 }
-    );
+    const error: SearchError = {
+      code: "VALIDATION_ERROR",
+      message: "Invalid request parameters",
+      errors: validation.errors,
+    };
+    return NextResponse.json(error, { status: 400 });
   }
 
   const params = validation.params;
@@ -256,62 +259,76 @@ export async function GET(request: NextRequest) {
 
   if (cached !== null) {
     const durationMs = Date.now() - startTime;
-    return NextResponse.json({
-      _meta: {
-        source: "cache",
+
+    // Return cached response with updated meta
+    const response: SearchResponse = {
+      ...cached,
+      meta: {
+        ...cached.meta,
         durationMs,
         cached: true,
       },
-      ...cached as object,
-    });
+    };
+
+    return NextResponse.json(response);
   }
 
   // Call Amadeus API
   try {
-    const response = await amadeusFetch<unknown>("/v2/shopping/flight-offers", {
-      method: "GET",
-      query: {
-        originLocationCode: params.originLocationCode,
-        destinationLocationCode: params.destinationLocationCode,
-        departureDate: params.departureDate,
-        returnDate: params.returnDate,
-        adults: params.adults,
-        travelClass: params.travelClass,
-        nonStop: params.nonStop,
-        max: params.max,
-        currencyCode: params.currencyCode,
-      },
+    const amadeusResponse = await amadeusFetch<AmadeusFlightOffersResponse>(
+      "/v2/shopping/flight-offers",
+      {
+        method: "GET",
+        query: {
+          originLocationCode: params.originLocationCode,
+          destinationLocationCode: params.destinationLocationCode,
+          departureDate: params.departureDate,
+          returnDate: params.returnDate,
+          adults: params.adults,
+          travelClass: params.travelClass,
+          nonStop: params.nonStop,
+          max: params.max,
+          currencyCode: params.currencyCode,
+        },
+      }
+    );
+
+    const durationMs = Date.now() - startTime;
+
+    // Map to normalized format
+    const { flights, skipped } = mapFlightOffersToSearchResponse(amadeusResponse, {
+      from: params.originLocationCode,
+      to: params.destinationLocationCode,
+      depart: params.departureDate,
+      return: params.returnDate,
+      adults: params.adults,
+      currency: params.currencyCode,
+    });
+
+    // Create response
+    const response = createSearchResponse(flights, {
+      durationMs,
+      cached: false,
+      skipped,
     });
 
     // Cache the response
     setCache(cacheKey, response);
 
-    const durationMs = Date.now() - startTime;
-
-    return NextResponse.json({
-      _meta: {
-        source: "amadeus",
-        durationMs,
-        cached: false,
-      },
-      ...response as object,
-    });
+    return NextResponse.json(response);
   } catch (error) {
     const durationMs = Date.now() - startTime;
 
     // Handle AmadeusError
     if (error instanceof AmadeusError) {
+      const errorResponse: SearchError = {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        requestId: error.requestId,
+      };
       return NextResponse.json(
-        {
-          code: error.code,
-          status: error.status,
-          message: error.message,
-          requestId: error.requestId,
-          details: error.details,
-          _meta: {
-            durationMs,
-          },
-        },
+        { ...errorResponse, _meta: { durationMs } },
         { status: 502 }
       );
     }
@@ -319,14 +336,12 @@ export async function GET(request: NextRequest) {
     // Handle unexpected errors
     console.error("[API] Unexpected error:", error);
 
+    const errorResponse: SearchError = {
+      code: "INTERNAL_ERROR",
+      message: error instanceof Error ? error.message : "Unknown error",
+    };
     return NextResponse.json(
-      {
-        code: "INTERNAL_ERROR",
-        message: error instanceof Error ? error.message : "Unknown error",
-        _meta: {
-          durationMs,
-        },
-      },
+      { ...errorResponse, _meta: { durationMs } },
       { status: 502 }
     );
   }

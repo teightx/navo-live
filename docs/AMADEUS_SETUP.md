@@ -81,12 +81,87 @@ npm start
 Após implementar a integração, você pode testar:
 
 ```bash
-# Verificar se variáveis estão carregadas (server-side)
-# Adicione um console.log temporário em uma API route:
-# console.log('AMADEUS_BASE_URL:', process.env.AMADEUS_BASE_URL)
+# 1. One-way (só ida)
+curl "http://localhost:3000/api/flights/search?from=GRU&to=LIS&depart=2025-03-15&max=5"
 
-# Testar busca de voos via API route
-curl http://localhost:3000/api/flights/search?from=GRU&to=LIS&depart=2025-12-15
+# 2. Round-trip (ida e volta)
+curl "http://localhost:3000/api/flights/search?from=GRU&to=LIS&depart=2025-03-15&return=2025-03-22&adults=2"
+
+# 3. Non-stop only (sem escalas)
+curl "http://localhost:3000/api/flights/search?from=GRU&to=EZE&depart=2025-04-01&nonStop=true&max=5"
+```
+
+### Exemplo de Response Normalizado
+
+O endpoint retorna o formato `SearchResponse`:
+
+```json
+{
+  "flights": [
+    {
+      "id": "amadeus-1",
+      "airline": "latam",
+      "airlineCode": "LA",
+      "departure": "22:30",
+      "arrival": "11:15",
+      "duration": "10h 45min",
+      "stops": "direto",
+      "price": 3420,
+      "offersCount": 4,
+      "nextDayArrival": true
+    },
+    {
+      "id": "amadeus-2",
+      "airline": "tap",
+      "airlineCode": "TP",
+      "departure": "23:55",
+      "arrival": "12:30",
+      "duration": "10h 35min",
+      "stops": "1 escala",
+      "stopsCities": ["LIS"],
+      "price": 3180,
+      "offersCount": 3,
+      "nextDayArrival": true
+    }
+  ],
+  "source": "amadeus",
+  "meta": {
+    "count": 2,
+    "durationMs": 842,
+    "cached": false
+  }
+}
+```
+
+### Respostas de Erro
+
+**400 - Validação:**
+```json
+{
+  "code": "VALIDATION_ERROR",
+  "message": "Invalid request parameters",
+  "errors": [
+    { "field": "from", "message": "Must be 3 uppercase letters (IATA code)" }
+  ]
+}
+```
+
+**502 - Erro Amadeus:**
+```json
+{
+  "code": "HTTP_400",
+  "message": "INVALID FORMAT",
+  "requestId": "req_m5xk8z_3h7j2q",
+  "_meta": { "durationMs": 234 }
+}
+```
+
+**503 - Feature flag desabilitada:**
+```json
+{
+  "code": "AMADEUS_DISABLED",
+  "message": "Amadeus integration is disabled. Set USE_AMADEUS=true to enable."
+}
 ```
 
 ---

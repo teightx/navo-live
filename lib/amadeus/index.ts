@@ -23,5 +23,15 @@ export {
 // Flights
 export { searchFlightsAmadeus } from "./flights";
 
+// Mappers
+export {
+  mapFlightOffersToSearchResponse,
+  createSearchResponse,
+  parseIsoDurationToMinutes,
+  parseIsoDuration,
+  formatDuration,
+  type MapperRequestParams,
+} from "./mappers";
+
 // Types
 export type * from "./types";

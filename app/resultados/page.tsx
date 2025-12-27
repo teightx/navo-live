@@ -7,7 +7,7 @@ import { LogoMark, Wordmark } from "@/components/brand";
 import { Footer, ThemeToggle, LanguageToggle } from "@/components/layout";
 import { BackgroundWaves, SearchModal } from "@/components/ui";
 import { FlightCard } from "@/components/flights";
-import { ResultsFilters, type FilterType } from "@/components/results";
+import { ResultsFilters, DecisionSummary, PriceAlertCTA, type FilterType } from "@/components/results";
 import { useI18n } from "@/lib/i18n";
 import type { SearchState, FlightResult } from "@/lib/search/types";
 import { searchFlights, shouldUseMockFallback } from "@/lib/search/searchFlights";
@@ -553,11 +553,11 @@ function ResultsContent() {
         </header>
 
         <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 pb-16">
+          {/* 1. Título + Mensagem humana */}
           <div className="mb-6">
             <h1 className="text-xl sm:text-2xl font-medium text-ink lowercase">
               {t.results.flightsTo} {searchState.to?.city || to}
             </h1>
-            {/* Mensagem humana ou status */}
             <p className="text-ink-muted text-sm mt-1">
               {isLoading 
                 ? t.results.searching
@@ -570,7 +570,33 @@ function ResultsContent() {
             </p>
           </div>
 
-          {/* Filtros */}
+          {/* 2. Decision Summary (3 cards: melhor equilíbrio, mais barato, mais rápido) */}
+          {!isLoading && !errorInfo && labeledFlights.length > 0 && (
+            <DecisionSummary 
+              flights={results}
+              onCardClick={(type, flightId) => {
+                // Scroll para o voo correspondente
+                const element = document.getElementById(`flight-${flightId}`);
+                if (element) {
+                  element.scrollIntoView({ behavior: "smooth", block: "center" });
+                  // Highlight temporário
+                  element.classList.add("ring-2", "ring-blue");
+                  setTimeout(() => {
+                    element.classList.remove("ring-2", "ring-blue");
+                  }, 2000);
+                }
+              }}
+            />
+          )}
+
+          {/* 3. CTA de alerta de preço */}
+          {!isLoading && !errorInfo && labeledFlights.length > 0 && (
+            <PriceAlertCTA 
+              route={`${searchState.from?.city || from} → ${searchState.to?.city || to}`}
+            />
+          )}
+
+          {/* 4. Filtros */}
           {!isLoading && !errorInfo && labeledFlights.length > 0 && (
             <div className="mb-6">
               <ResultsFilters 
@@ -580,7 +606,7 @@ function ResultsContent() {
             </div>
           )}
 
-          {/* Estados */}
+          {/* 5. Estados (loading, error, empty) ou Lista de voos */}
           {isLoading ? (
             <LoadingSkeleton />
           ) : isRateLimited && errorInfo ? (
@@ -599,9 +625,9 @@ function ResultsContent() {
           ) : labeledFlights.length === 0 ? (
             <EmptyState onEditSearch={handleEditSearch} />
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-5">
               {labeledFlights.map((flight) => {
-                // Info para tooltip do best_balance (compatibilidade)
+                // Info para tooltip do best_balance
                 const bestOfferInfo = flight.label === "best_balance"
                   ? { 
                       explanation: t.results.bestOfferExplanation,
@@ -610,15 +636,16 @@ function ResultsContent() {
                   : null;
                 
                 return (
-                  <FlightCard 
-                    key={flight.id}
-                    flight={flight} 
-                    onClick={() => handleFlightClick(flight)}
-                    label={flight.label}
-                    priceContext={flight.priceContext}
-                    isHighlighted={flight.isHighlighted}
-                    bestOfferInfo={bestOfferInfo}
-                  />
+                  <div key={flight.id} id={`flight-${flight.id}`} className="transition-all duration-300">
+                    <FlightCard 
+                      flight={flight} 
+                      onClick={() => handleFlightClick(flight)}
+                      label={flight.label}
+                      priceContext={flight.priceContext}
+                      isHighlighted={flight.isHighlighted}
+                      bestOfferInfo={bestOfferInfo}
+                    />
+                  </div>
                 );
               })}
             </div>

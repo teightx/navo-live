@@ -1,12 +1,44 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useI18n } from "@/lib/i18n";
 import { serializeSearchState } from "@/lib/utils/searchParams";
 import { defaultSearchState } from "@/lib/types/search";
 import { getAirportByCode } from "@/lib/airports";
-import { findNearestAirport, getAllAirports, type AirportLocation } from "@/lib/geo/nearestAirport";
+import { findNearestAirport, getAllAirports } from "@/lib/geo/nearestAirport";
+
+// ============================================================================
+// Carousel Arrow Icons
+// ============================================================================
+
+function ChevronLeftIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <path
+        d="M12.5 15L7.5 10L12.5 5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ChevronRightIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <path
+        d="M7.5 15L12.5 10L7.5 5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 // ============================================================================
 // Feature Flag
@@ -214,6 +246,139 @@ function SimpleRouteCard({ route, onClick }: SimpleRouteCardProps) {
         </div>
       </div>
     </button>
+  );
+}
+
+// ============================================================================
+// Holiday Section with Mobile Carousel
+// ============================================================================
+
+interface HolidaySectionProps {
+  name: string;
+  dates: string;
+  tripDays: number;
+  routes: SmartRouteCard[];
+  locale: string;
+  onRouteClick: (route: SmartRouteCard) => void;
+}
+
+function HolidaySection({
+  name,
+  dates,
+  tripDays,
+  routes,
+  locale,
+  onRouteClick,
+}: HolidaySectionProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const daysText = locale === "pt" ? "dias" : "days";
+
+  function updateScrollButtons() {
+    if (!scrollRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+    setCanScrollLeft(scrollLeft > 0);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+  }
+
+  function scrollLeft() {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollBy({ left: -280, behavior: "smooth" });
+  }
+
+  function scrollRight() {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollBy({ left: 280, behavior: "smooth" });
+  }
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    updateScrollButtons();
+    el.addEventListener("scroll", updateScrollButtons);
+    window.addEventListener("resize", updateScrollButtons);
+
+    return () => {
+      el.removeEventListener("scroll", updateScrollButtons);
+      window.removeEventListener("resize", updateScrollButtons);
+    };
+  }, [routes]);
+
+  return (
+    <div>
+      {/* Holiday header with navigation arrows on mobile */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <h3 className="text-base font-medium text-ink capitalize">{name}</h3>
+          <span className="text-xs text-ink-muted">
+            {dates} · {tripDays} {daysText}
+          </span>
+        </div>
+
+        {/* Mobile carousel arrows */}
+        <div className="flex items-center gap-1 sm:hidden">
+          <button
+            onClick={scrollLeft}
+            disabled={!canScrollLeft}
+            className={`p-1.5 rounded-full border transition-all ${
+              canScrollLeft
+                ? "border-ink/20 text-ink hover:bg-cream-dark/50"
+                : "border-ink/10 text-ink/30 cursor-not-allowed"
+            }`}
+            style={{ background: "var(--card-bg)" }}
+            aria-label="Anterior"
+          >
+            <ChevronLeftIcon />
+          </button>
+          <button
+            onClick={scrollRight}
+            disabled={!canScrollRight}
+            className={`p-1.5 rounded-full border transition-all ${
+              canScrollRight
+                ? "border-ink/20 text-ink hover:bg-cream-dark/50"
+                : "border-ink/10 text-ink/30 cursor-not-allowed"
+            }`}
+            style={{ background: "var(--card-bg)" }}
+            aria-label="Próximo"
+          >
+            <ChevronRightIcon />
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile: Horizontal scroll carousel */}
+      <div
+        ref={scrollRef}
+        className="sm:hidden flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-4 px-4 pb-2"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        {routes.map((route) => (
+          <div
+            key={route.id}
+            className="flex-shrink-0 w-[260px] snap-start"
+          >
+            <SmartRouteCardComponent
+              route={route}
+              onClick={() => onRouteClick(route)}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop: Grid layout */}
+      <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {routes.map((route) => (
+          <SmartRouteCardComponent
+            key={route.id}
+            route={route}
+            onClick={() => onRouteClick(route)}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -535,7 +700,7 @@ export function OpportunitiesSection() {
   const changeOriginText = locale === "pt" ? "trocar origem" : "change origin";
 
   return (
-    <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-12">
+    <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-12 pb-24">
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
           <h2 className="text-xl sm:text-2xl font-medium text-ink lowercase">
@@ -629,28 +794,15 @@ export function OpportunitiesSection() {
             }, {} as Record<string, { name: string; dates: string; tripDays: number; routes: SmartRouteCard[] }>);
 
             return Object.entries(groupedByHoliday).map(([key, group]) => (
-              <div key={key}>
-                {/* Holiday header */}
-                <div className="flex items-center gap-3 mb-4">
-                  <h3 className="text-base font-medium text-ink capitalize">
-                    {group.name}
-                  </h3>
-                  <span className="text-xs text-ink-muted">
-                    {group.dates} · {group.tripDays} {locale === "pt" ? "dias" : "days"}
-                  </span>
-                </div>
-
-                {/* Cards grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {group.routes.map((route) => (
-                    <SmartRouteCardComponent
-                      key={route.id}
-                      route={route}
-                      onClick={() => handleSmartRouteClick(route)}
-                    />
-                  ))}
-                </div>
-              </div>
+              <HolidaySection
+                key={key}
+                name={group.name}
+                dates={group.dates}
+                tripDays={group.tripDays}
+                routes={group.routes}
+                locale={locale}
+                onRouteClick={handleSmartRouteClick}
+              />
             ));
           })()}
         </div>

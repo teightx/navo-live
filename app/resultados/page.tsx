@@ -486,7 +486,7 @@ function ResultsContent() {
           </div>
         </header>
 
-        <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+        <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 pb-16">
           <div className="mb-6">
             <h1 className="text-xl sm:text-2xl font-medium text-ink lowercase">
               {t.results.flightsTo} {searchState.to?.city || to}

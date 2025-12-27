@@ -2,11 +2,45 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useI18n } from "@/lib/i18n";
 import { serializeSearchState } from "@/lib/utils/searchParams";
 import { defaultSearchState } from "@/lib/types/search";
 import { getAirportByCode } from "@/lib/airports";
 import { findNearestAirport, getAllAirports } from "@/lib/geo/nearestAirport";
+
+// ============================================================================
+// Destination Images Mapping
+// ============================================================================
+
+const DESTINATION_IMAGES: Record<string, string> = {
+  // Cidade -> arquivo de imagem
+  "lisboa": "/destinations/lisboa.jpg",
+  "madrid": "/destinations/madrid.jpg",
+  "miami": "/destinations/miami.jpg",
+  "orlando": "/destinations/orlando.jpg",
+  "buenos aires": "/destinations/buenosaires.jpg",
+  // Fallback para códigos de aeroporto comuns
+  "LIS": "/destinations/lisboa.avif",
+  "MAD": "/destinations/madrid.jpg",
+  "MIA": "/destinations/miami.jpg",
+  "MCO": "/destinations/orlando.jpg",
+  "EZE": "/destinations/buenosaires.jpg",
+  "AEP": "/destinations/buenosaires.jpg",
+};
+
+function getDestinationImage(city: string, code?: string): string | null {
+  // Primeiro tenta pelo nome da cidade (lowercase)
+  const cityLower = city.toLowerCase();
+  if (DESTINATION_IMAGES[cityLower]) {
+    return DESTINATION_IMAGES[cityLower];
+  }
+  // Depois tenta pelo código do aeroporto
+  if (code && DESTINATION_IMAGES[code]) {
+    return DESTINATION_IMAGES[code];
+  }
+  return null;
+}
 
 // ============================================================================
 // Carousel Arrow Icons
@@ -260,6 +294,8 @@ interface HolidaySectionProps {
   routes: SmartRouteCard[];
   locale: string;
   onRouteClick: (route: SmartRouteCard) => void;
+  /** Whether to use glass styling for cards (for home page) */
+  isGlass?: boolean;
 }
 
 function HolidaySection({
@@ -269,6 +305,7 @@ function HolidaySection({
   routes,
   locale,
   onRouteClick,
+  isGlass = false,
 }: HolidaySectionProps) {
   // State for active card index (starts at 0)
   const [activeIndex, setActiveIndex] = useState(0);
@@ -334,6 +371,7 @@ function HolidaySection({
                   <SmartRouteCardComponent
                     route={route}
                     onClick={() => onRouteClick(route)}
+                    isGlass={isGlass}
                   />
                 </div>
               ))}
@@ -378,6 +416,7 @@ function HolidaySection({
             key={route.id}
             route={route}
             onClick={() => onRouteClick(route)}
+            isGlass={isGlass}
           />
         ))}
       </div>
@@ -392,40 +431,83 @@ function HolidaySection({
 interface SmartRouteCardProps {
   route: SmartRouteCard;
   onClick: () => void;
+  /** Whether to use glass styling (for home page) */
+  isGlass?: boolean;
 }
 
-function SmartRouteCardComponent({ route, onClick }: SmartRouteCardProps) {
+function SmartRouteCardComponent({ route, onClick, isGlass = false }: SmartRouteCardProps) {
   const { locale } = useI18n();
 
   const fromText = locale === "pt" ? "a partir de" : "from";
   const viewFlightsText = locale === "pt" ? "ver voos" : "view flights";
+  
+  // Get destination image if available
+  const destinationImage = getDestinationImage(route.toCity, route.to);
+  const hasImage = !!destinationImage;
+
+  // Premium solid card styles (não transparente)
+  // Escuro: superfície ink/slate | Claro: branco com sombra
+  const cardStyles = isGlass
+    ? {
+        // Premium solid - NOT transparent
+        background: "var(--home-card-bg, #121A2A)",
+        borderColor: "var(--home-card-border, rgba(255, 255, 255, 0.06))",
+        boxShadow: "0 4px 24px rgba(0, 0, 0, 0.15)",
+      }
+    : {
+        background: "var(--card-bg)",
+        borderColor: "var(--card-border)",
+      };
 
   return (
     <button
       onClick={onClick}
-      className="group w-full text-left rounded-xl border transition-all duration-200 hover:border-blue-soft hover:shadow-md"
-      style={{
-        background: "var(--card-bg)",
-        borderColor: "var(--card-border)",
-      }}
+      className="group w-full text-left rounded-2xl border transition-all duration-200 hover:border-blue-soft/50 hover:shadow-xl overflow-hidden"
+      style={cardStyles}
     >
-      <div className="p-4">
-        {/* Destination */}
-        <div className="mb-3">
-          <div className="text-sm font-medium text-ink capitalize mb-1">
-            {route.toCity}
-          </div>
-          <div className="text-xs text-ink-muted capitalize">
-            {route.toCountry}
+      {/* Image section with fixed height */}
+      {hasImage && (
+        <div className="relative h-32 md:h-36 w-full overflow-hidden rounded-t-2xl">
+          <Image
+            src={destinationImage}
+            alt={`${route.toCity}, ${route.toCountry}`}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          />
+          {/* Gradient overlay for text legibility */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+          {/* Destination name over image */}
+          <div className="absolute bottom-3 left-3 right-3">
+            <div className="text-base font-semibold text-white capitalize drop-shadow-md">
+              {route.toCity}
+            </div>
+            <div className="text-xs text-white/75 capitalize drop-shadow-sm">
+              {route.toCountry}
+            </div>
           </div>
         </div>
+      )}
+
+      <div className="p-4">
+        {/* Destination (only if no image) */}
+        {!hasImage && (
+          <div className="mb-3">
+            <div className="text-base font-semibold text-ink capitalize mb-0.5">
+              {route.toCity}
+            </div>
+            <div className="text-xs opacity-65 capitalize">
+              {route.toCountry}
+            </div>
+          </div>
+        )}
 
         {/* Price - only show if we have data */}
-        <div className="flex items-baseline gap-2 mb-3 min-h-[24px]">
+        <div className={`flex items-baseline gap-2 min-h-[28px] ${hasImage ? "mb-2" : "mb-3"}`}>
           {route.price !== undefined && (
             <>
-              <span className="text-xs text-ink-muted lowercase">{fromText}</span>
-              <span className="text-lg font-bold text-blue">
+              <span className="text-xs opacity-65 lowercase">{fromText}</span>
+              <span className="text-xl font-bold text-blue">
                 {formatPrice(route.price)}
               </span>
             </>
@@ -434,21 +516,17 @@ function SmartRouteCardComponent({ route, onClick }: SmartRouteCardProps) {
 
         {/* CTA */}
         <div
-          className="flex items-center justify-end pt-2 border-t"
-          style={{ borderColor: "var(--cream-dark)" }}
+          className="flex items-center justify-end pt-3 border-t"
+          style={{ borderColor: isGlass ? "rgba(255, 255, 255, 0.08)" : "var(--cream-dark)" }}
         >
-          <span
-            className="text-xs font-medium lowercase transition-colors group-hover:text-blue"
-            style={{ color: "var(--ink)" }}
-          >
+          <span className="text-xs font-medium lowercase transition-colors group-hover:text-blue text-ink">
             {viewFlightsText}
             <svg
               width="12"
               height="12"
               viewBox="0 0 12 12"
               fill="none"
-              className="inline-block ml-1"
-              style={{ color: "var(--ink-muted)" }}
+              className="inline-block ml-1 opacity-60"
             >
               <path
                 d="M4.5 9L7.5 6L4.5 3"
@@ -512,7 +590,16 @@ function LoadingSkeleton() {
 // Main Component
 // ============================================================================
 
-export function OpportunitiesSection() {
+interface OpportunitiesSectionProps {
+  /**
+   * Variant controls styling:
+   * - "home": Used on homepage with solid background (no waves behind)
+   * - "default": Used on other pages with normal styling
+   */
+  variant?: "home" | "default";
+}
+
+export function OpportunitiesSection({ variant = "default" }: OpportunitiesSectionProps) {
   const router = useRouter();
   const { locale } = useI18n();
 
@@ -702,8 +789,13 @@ export function OpportunitiesSection() {
 
   const changeOriginText = locale === "pt" ? "trocar origem" : "change origin";
 
+  // Classes e estilos baseados na variante
+  const isHome = variant === "home";
+  
   return (
-    <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-12 pb-24">
+    <section 
+      className={`w-full max-w-5xl mx-auto px-4 sm:px-6 ${isHome ? "pb-16" : "pt-12 pb-24"}`}
+    >
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
           <h2 className="text-xl sm:text-2xl font-medium text-ink lowercase">
@@ -805,6 +897,7 @@ export function OpportunitiesSection() {
                 routes={group.routes}
                 locale={locale}
                 onRouteClick={handleSmartRouteClick}
+                isGlass={isHome}
               />
             ));
           })()}

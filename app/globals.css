@@ -53,6 +53,10 @@
   --field-hover-bg: rgba(255, 255, 255, 0.8);
   --popover-bg: rgba(255, 255, 255, 0.95);
   --glow-opacity: 0; /* Desativa glow nas linhas de voo no modo claro */
+
+  /* Home cards - Light mode (warm stone premium) */
+  --home-card-bg: #FFFFFF;
+  --home-card-border: rgba(10, 20, 30, 0.08);
 }
 
 /* Dark mode */
@@ -85,6 +89,10 @@
   --field-hover-bg: rgba(60, 60, 70, 0.8);
   --popover-bg: rgba(35, 35, 42, 0.98);
   --glow-opacity: 1; /* Ativa glow nas linhas de voo no modo escuro */
+
+  /* Home cards - Dark mode (ink/slate premium) */
+  --home-card-bg: #121A2A;
+  --home-card-border: rgba(255, 255, 255, 0.06);
 }
 
 @keyframes wavesBack {
@@ -125,6 +133,79 @@
   animation: footerWave 20s linear infinite;
 }
 
+/* Home Wave Transition - Animações horizontais parallax */
+@keyframes wave-horizontal-slow {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-25%); }
+}
+
+@keyframes wave-horizontal-medium {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-20%); }
+}
+
+@keyframes wave-horizontal-fast {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-15%); }
+}
+
+.animate-wave-slow {
+  animation: wave-horizontal-slow 40s linear infinite;
+}
+
+.animate-wave-medium {
+  animation: wave-horizontal-medium 30s linear infinite;
+}
+
+.animate-wave-fast {
+  animation: wave-horizontal-fast 25s linear infinite;
+}
+
+/* ============================================================
+   HOME SCROLL SNAP - Encaixe automático entre seções
+   O comportamento de "magnet scroll" é controlado via JS no page.tsx
+   ============================================================ */
+
+/* Esconde a scrollbar do body quando a home está usando seu próprio container de scroll */
+body:has(main.h-screen) {
+  overflow: hidden;
+}
+
+/* Esconde a scrollbar visual mas mantém funcionalidade (opcional, para visual mais limpo) */
+main.h-screen {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.2) transparent;
+}
+
+main.h-screen::-webkit-scrollbar {
+  width: 6px;
+}
+
+main.h-screen::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+main.h-screen::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.15);
+  border-radius: 3px;
+}
+
+main.h-screen::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.25);
+}
+
+:root.dark main.h-screen {
+  scrollbar-color: rgba(255,255,255,0.2) transparent;
+}
+
+:root.dark main.h-screen::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+}
+
+:root.dark main.h-screen::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.25);
+}
+
 html {
   scroll-behavior: smooth;
   overflow-y: scroll; /* Evita shift horizontal quando modais abrem/fecham */
@@ -160,6 +241,11 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  
+  /* Desabilita scroll-snap para quem prefere menos movimento */
+  .home-scroll-container {
+    scroll-snap-type: none;
   }
 }
 

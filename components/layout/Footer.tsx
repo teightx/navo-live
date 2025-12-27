@@ -5,7 +5,16 @@ import { useTheme } from "next-themes";
 import { useI18n } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 
-export function Footer() {
+interface FooterProps {
+  /**
+   * Variant controls styling:
+   * - "home": Used on homepage - no wave transition (already has WaveTransition above)
+   * - "default": Used on other pages - includes wave transition
+   */
+  variant?: "home" | "default";
+}
+
+export function Footer({ variant = "default" }: FooterProps) {
   const { t } = useI18n();
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -30,52 +39,56 @@ export function Footer() {
   const brandColor = isDark ? "rgb(181, 201, 163)" : "rgb(122, 155, 106)";
   const linkHoverColor = isDark ? "rgb(127, 166, 179)" : "rgb(79, 115, 134)";
 
+  const isHome = variant === "home";
+
   return (
     <footer 
       className="relative z-10 transition-colors duration-300"
       style={{
-        background: footerBg,
+        background: isHome ? "transparent" : footerBg,
       }}
     >
-      {/* Onda SVG animada como transição - simula a continuação natural das ondas */}
-      <div 
-        className="absolute left-0 right-0 pointer-events-none overflow-hidden"
-        style={{
-          bottom: "100%",
-          height: "80px",
-        }}
-      >
-        {/* SVG duplicado para animação contínua (200% de largura) */}
+      {/* Onda SVG animada como transição - apenas para páginas não-home */}
+      {!isHome && (
         <div 
-          className="absolute bottom-0 h-full animate-footer-wave"
-          style={{ 
-            width: "200%",
-            willChange: "transform",
+          className="absolute left-0 right-0 pointer-events-none overflow-hidden"
+          style={{
+            bottom: "100%",
+            height: "80px",
           }}
         >
-          <svg 
-            viewBox="0 0 2880 80" 
-            preserveAspectRatio="none"
-            className="h-full w-full"
+          {/* SVG duplicado para animação contínua (200% de largura) */}
+          <div 
+            className="absolute bottom-0 h-full animate-footer-wave"
+            style={{ 
+              width: "200%",
+              willChange: "transform",
+            }}
           >
-            {/* Path único contínuo - começa e termina na mesma altura (40) para loop perfeito */}
-            <path 
-              d={`
-                M0 40 
-                C 180 20, 360 60, 540 35 
-                C 720 10, 900 55, 1080 30 
-                C 1260 5, 1440 50, 1440 40
-                C 1620 20, 1800 60, 1980 35 
-                C 2160 10, 2340 55, 2520 30 
-                C 2700 5, 2880 50, 2880 40
-                L 2880 80 L 0 80 Z
-              `}
-              fill={waveColor}
-              className="transition-colors duration-300"
-            />
-          </svg>
+            <svg 
+              viewBox="0 0 2880 80" 
+              preserveAspectRatio="none"
+              className="h-full w-full"
+            >
+              {/* Path único contínuo - começa e termina na mesma altura (40) para loop perfeito */}
+              <path 
+                d={`
+                  M0 40 
+                  C 180 20, 360 60, 540 35 
+                  C 720 10, 900 55, 1080 30 
+                  C 1260 5, 1440 50, 1440 40
+                  C 1620 20, 1800 60, 1980 35 
+                  C 2160 10, 2340 55, 2520 30 
+                  C 2700 5, 2880 50, 2880 40
+                  L 2880 80 L 0 80 Z
+                `}
+                fill={waveColor}
+                className="transition-colors duration-300"
+              />
+            </svg>
+          </div>
         </div>
-      </div>
+      )}
       
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">

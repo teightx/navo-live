@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Airport, searchAirports, formatAirport } from "@/lib/mocks/airports";
+import { Airport, searchAirports, formatAirport } from "@/lib/airports";
 import { AirportList } from "./AirportList";
 
 interface AutocompleteFieldProps {

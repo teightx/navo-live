@@ -1,0 +1,891 @@
+[
+  {
+    "code": "GRU",
+    "city": "São Paulo",
+    "cityCode": "SAO",
+    "country": "BR",
+    "name": "Guarulhos – Governador André Franco Montoro",
+    "keywords": ["gru", "guarulhos", "sao paulo", "sp", "são paulo", "internacional"]
+  },
+  {
+    "code": "CGH",
+    "city": "São Paulo",
+    "cityCode": "SAO",
+    "country": "BR",
+    "name": "Congonhas",
+    "keywords": ["cgh", "congonhas", "sao paulo", "sp", "são paulo"]
+  },
+  {
+    "code": "VCP",
+    "city": "Campinas",
+    "cityCode": "SAO",
+    "country": "BR",
+    "name": "Viracopos",
+    "keywords": ["vcp", "viracopos", "campinas", "sao paulo", "são paulo"]
+  },
+  {
+    "code": "GIG",
+    "city": "Rio de Janeiro",
+    "cityCode": "RIO",
+    "country": "BR",
+    "name": "Galeão – Tom Jobim",
+    "keywords": ["gig", "galeao", "galeão", "rio de janeiro", "rj", "tom jobim", "internacional"]
+  },
+  {
+    "code": "SDU",
+    "city": "Rio de Janeiro",
+    "cityCode": "RIO",
+    "country": "BR",
+    "name": "Santos Dumont",
+    "keywords": ["sdu", "santos dumont", "rio de janeiro", "rj"]
+  },
+  {
+    "code": "BSB",
+    "city": "Brasília",
+    "cityCode": "BSB",
+    "country": "BR",
+    "name": "Presidente Juscelino Kubitschek",
+    "keywords": ["bsb", "brasilia", "brasília", "df", "distrito federal"]
+  },
+  {
+    "code": "CNF",
+    "city": "Belo Horizonte",
+    "cityCode": "BHZ",
+    "country": "BR",
+    "name": "Confins – Tancredo Neves",
+    "keywords": ["cnf", "confins", "belo horizonte", "bh", "mg", "minas gerais", "tancredo neves"]
+  },
+  {
+    "code": "PLU",
+    "city": "Belo Horizonte",
+    "cityCode": "BHZ",
+    "country": "BR",
+    "name": "Pampulha – Carlos Drummond de Andrade",
+    "keywords": ["plu", "pampulha", "belo horizonte", "bh", "mg"]
+  },
+  {
+    "code": "REC",
+    "city": "Recife",
+    "cityCode": "REC",
+    "country": "BR",
+    "name": "Guararapes – Gilberto Freyre",
+    "keywords": ["rec", "recife", "guararapes", "pe", "pernambuco"]
+  },
+  {
+    "code": "FOR",
+    "city": "Fortaleza",
+    "cityCode": "FOR",
+    "country": "BR",
+    "name": "Pinto Martins",
+    "keywords": ["for", "fortaleza", "pinto martins", "ce", "ceara", "ceará"]
+  },
+  {
+    "code": "SSA",
+    "city": "Salvador",
+    "cityCode": "SSA",
+    "country": "BR",
+    "name": "Deputado Luís Eduardo Magalhães",
+    "keywords": ["ssa", "salvador", "bahia", "ba"]
+  },
+  {
+    "code": "POA",
+    "city": "Porto Alegre",
+    "cityCode": "POA",
+    "country": "BR",
+    "name": "Salgado Filho",
+    "keywords": ["poa", "porto alegre", "salgado filho", "rs", "rio grande do sul"]
+  },
+  {
+    "code": "CWB",
+    "city": "Curitiba",
+    "cityCode": "CWB",
+    "country": "BR",
+    "name": "Afonso Pena",
+    "keywords": ["cwb", "curitiba", "afonso pena", "pr", "parana", "paraná"]
+  },
+  {
+    "code": "FLN",
+    "city": "Florianópolis",
+    "cityCode": "FLN",
+    "country": "BR",
+    "name": "Hercílio Luz",
+    "keywords": ["fln", "florianopolis", "florianópolis", "hercilio luz", "sc", "santa catarina"]
+  },
+  {
+    "code": "NAT",
+    "city": "Natal",
+    "cityCode": "NAT",
+    "country": "BR",
+    "name": "São Gonçalo do Amarante",
+    "keywords": ["nat", "natal", "rn", "rio grande do norte"]
+  },
+  {
+    "code": "MCZ",
+    "city": "Maceió",
+    "cityCode": "MCZ",
+    "country": "BR",
+    "name": "Zumbi dos Palmares",
+    "keywords": ["mcz", "maceio", "maceió", "al", "alagoas"]
+  },
+  {
+    "code": "AJU",
+    "city": "Aracaju",
+    "cityCode": "AJU",
+    "country": "BR",
+    "name": "Santa Maria",
+    "keywords": ["aju", "aracaju", "se", "sergipe"]
+  },
+  {
+    "code": "BEL",
+    "city": "Belém",
+    "cityCode": "BEL",
+    "country": "BR",
+    "name": "Val de Cans – Júlio Cezar Ribeiro",
+    "keywords": ["bel", "belem", "belém", "pa", "para", "pará"]
+  },
+  {
+    "code": "MAO",
+    "city": "Manaus",
+    "cityCode": "MAO",
+    "country": "BR",
+    "name": "Eduardo Gomes",
+    "keywords": ["mao", "manaus", "am", "amazonas"]
+  },
+  {
+    "code": "VIX",
+    "city": "Vitória",
+    "cityCode": "VIX",
+    "country": "BR",
+    "name": "Eurico de Aguiar Salles",
+    "keywords": ["vix", "vitoria", "vitória", "es", "espirito santo", "espírito santo"]
+  },
+  {
+    "code": "GYN",
+    "city": "Goiânia",
+    "cityCode": "GYN",
+    "country": "BR",
+    "name": "Santa Genoveva",
+    "keywords": ["gyn", "goiania", "goiânia", "go", "goias", "goiás"]
+  },
+  {
+    "code": "CGB",
+    "city": "Cuiabá",
+    "cityCode": "CGB",
+    "country": "BR",
+    "name": "Marechal Rondon",
+    "keywords": ["cgb", "cuiaba", "cuiabá", "mt", "mato grosso"]
+  },
+  {
+    "code": "CGR",
+    "city": "Campo Grande",
+    "cityCode": "CGR",
+    "country": "BR",
+    "name": "Campo Grande",
+    "keywords": ["cgr", "campo grande", "ms", "mato grosso do sul"]
+  },
+  {
+    "code": "SLZ",
+    "city": "São Luís",
+    "cityCode": "SLZ",
+    "country": "BR",
+    "name": "Marechal Cunha Machado",
+    "keywords": ["slz", "sao luis", "são luís", "ma", "maranhao", "maranhão"]
+  },
+  {
+    "code": "THE",
+    "city": "Teresina",
+    "cityCode": "THE",
+    "country": "BR",
+    "name": "Senador Petrônio Portella",
+    "keywords": ["the", "teresina", "pi", "piaui", "piauí"]
+  },
+  {
+    "code": "JPA",
+    "city": "João Pessoa",
+    "cityCode": "JPA",
+    "country": "BR",
+    "name": "Presidente Castro Pinto",
+    "keywords": ["jpa", "joao pessoa", "joão pessoa", "pb", "paraiba", "paraíba"]
+  },
+  {
+    "code": "LIS",
+    "city": "Lisboa",
+    "cityCode": "LIS",
+    "country": "PT",
+    "name": "Humberto Delgado",
+    "keywords": ["lis", "lisboa", "lisbon", "portugal", "pt"]
+  },
+  {
+    "code": "OPO",
+    "city": "Porto",
+    "cityCode": "OPO",
+    "country": "PT",
+    "name": "Francisco Sá Carneiro",
+    "keywords": ["opo", "porto", "portugal", "pt"]
+  },
+  {
+    "code": "FAO",
+    "city": "Faro",
+    "cityCode": "FAO",
+    "country": "PT",
+    "name": "Faro",
+    "keywords": ["fao", "faro", "algarve", "portugal", "pt"]
+  },
+  {
+    "code": "MAD",
+    "city": "Madrid",
+    "cityCode": "MAD",
+    "country": "ES",
+    "name": "Adolfo Suárez Madrid-Barajas",
+    "keywords": ["mad", "madrid", "barajas", "espanha", "spain", "es"]
+  },
+  {
+    "code": "BCN",
+    "city": "Barcelona",
+    "cityCode": "BCN",
+    "country": "ES",
+    "name": "El Prat – Josep Tarradellas",
+    "keywords": ["bcn", "barcelona", "el prat", "espanha", "spain", "es", "catalunha"]
+  },
+  {
+    "code": "CDG",
+    "city": "Paris",
+    "cityCode": "PAR",
+    "country": "FR",
+    "name": "Charles de Gaulle",
+    "keywords": ["cdg", "paris", "charles de gaulle", "roissy", "franca", "frança", "france", "fr"]
+  },
+  {
+    "code": "ORY",
+    "city": "Paris",
+    "cityCode": "PAR",
+    "country": "FR",
+    "name": "Orly",
+    "keywords": ["ory", "paris", "orly", "franca", "frança", "france", "fr"]
+  },
+  {
+    "code": "LHR",
+    "city": "Londres",
+    "cityCode": "LON",
+    "country": "GB",
+    "name": "Heathrow",
+    "keywords": ["lhr", "londres", "london", "heathrow", "uk", "reino unido", "inglaterra", "england"]
+  },
+  {
+    "code": "LGW",
+    "city": "Londres",
+    "cityCode": "LON",
+    "country": "GB",
+    "name": "Gatwick",
+    "keywords": ["lgw", "londres", "london", "gatwick", "uk", "reino unido"]
+  },
+  {
+    "code": "STN",
+    "city": "Londres",
+    "cityCode": "LON",
+    "country": "GB",
+    "name": "Stansted",
+    "keywords": ["stn", "londres", "london", "stansted", "uk", "reino unido"]
+  },
+  {
+    "code": "LTN",
+    "city": "Londres",
+    "cityCode": "LON",
+    "country": "GB",
+    "name": "Luton",
+    "keywords": ["ltn", "londres", "london", "luton", "uk", "reino unido"]
+  },
+  {
+    "code": "FCO",
+    "city": "Roma",
+    "cityCode": "ROM",
+    "country": "IT",
+    "name": "Leonardo da Vinci – Fiumicino",
+    "keywords": ["fco", "roma", "rome", "fiumicino", "leonardo da vinci", "italia", "itália", "italy", "it"]
+  },
+  {
+    "code": "CIA",
+    "city": "Roma",
+    "cityCode": "ROM",
+    "country": "IT",
+    "name": "Ciampino",
+    "keywords": ["cia", "roma", "rome", "ciampino", "italia", "itália", "italy", "it"]
+  },
+  {
+    "code": "MXP",
+    "city": "Milão",
+    "cityCode": "MIL",
+    "country": "IT",
+    "name": "Malpensa",
+    "keywords": ["mxp", "milao", "milão", "milan", "malpensa", "italia", "itália", "italy", "it"]
+  },
+  {
+    "code": "LIN",
+    "city": "Milão",
+    "cityCode": "MIL",
+    "country": "IT",
+    "name": "Linate",
+    "keywords": ["lin", "milao", "milão", "milan", "linate", "italia", "itália", "italy", "it"]
+  },
+  {
+    "code": "FRA",
+    "city": "Frankfurt",
+    "cityCode": "FRA",
+    "country": "DE",
+    "name": "Frankfurt am Main",
+    "keywords": ["fra", "frankfurt", "alemanha", "germany", "de"]
+  },
+  {
+    "code": "MUC",
+    "city": "Munique",
+    "cityCode": "MUC",
+    "country": "DE",
+    "name": "Franz Josef Strauss",
+    "keywords": ["muc", "munique", "munich", "alemanha", "germany", "de", "baviera"]
+  },
+  {
+    "code": "BER",
+    "city": "Berlim",
+    "cityCode": "BER",
+    "country": "DE",
+    "name": "Brandenburg",
+    "keywords": ["ber", "berlim", "berlin", "brandenburg", "alemanha", "germany", "de"]
+  },
+  {
+    "code": "AMS",
+    "city": "Amsterdã",
+    "cityCode": "AMS",
+    "country": "NL",
+    "name": "Schiphol",
+    "keywords": ["ams", "amsterda", "amsterdã", "amsterdam", "schiphol", "holanda", "netherlands", "nl"]
+  },
+  {
+    "code": "ZRH",
+    "city": "Zurique",
+    "cityCode": "ZRH",
+    "country": "CH",
+    "name": "Zurich",
+    "keywords": ["zrh", "zurique", "zurich", "suica", "suíça", "switzerland", "ch"]
+  },
+  {
+    "code": "GVA",
+    "city": "Genebra",
+    "cityCode": "GVA",
+    "country": "CH",
+    "name": "Geneva",
+    "keywords": ["gva", "genebra", "geneva", "suica", "suíça", "switzerland", "ch"]
+  },
+  {
+    "code": "VIE",
+    "city": "Viena",
+    "cityCode": "VIE",
+    "country": "AT",
+    "name": "Vienna",
+    "keywords": ["vie", "viena", "vienna", "austria", "áustria", "at"]
+  },
+  {
+    "code": "PRG",
+    "city": "Praga",
+    "cityCode": "PRG",
+    "country": "CZ",
+    "name": "Václav Havel",
+    "keywords": ["prg", "praga", "prague", "republica tcheca", "república tcheca", "czech republic", "cz"]
+  },
+  {
+    "code": "BUD",
+    "city": "Budapeste",
+    "cityCode": "BUD",
+    "country": "HU",
+    "name": "Ferenc Liszt",
+    "keywords": ["bud", "budapeste", "budapest", "hungria", "hungary", "hu"]
+  },
+  {
+    "code": "WAW",
+    "city": "Varsóvia",
+    "cityCode": "WAW",
+    "country": "PL",
+    "name": "Chopin",
+    "keywords": ["waw", "varsovia", "varsóvia", "warsaw", "polonia", "polônia", "poland", "pl"]
+  },
+  {
+    "code": "DUB",
+    "city": "Dublin",
+    "cityCode": "DUB",
+    "country": "IE",
+    "name": "Dublin",
+    "keywords": ["dub", "dublin", "irlanda", "ireland", "ie"]
+  },
+  {
+    "code": "ATH",
+    "city": "Atenas",
+    "cityCode": "ATH",
+    "country": "GR",
+    "name": "Eleftherios Venizelos",
+    "keywords": ["ath", "atenas", "athens", "grecia", "grécia", "greece", "gr"]
+  },
+  {
+    "code": "IST",
+    "city": "Istambul",
+    "cityCode": "IST",
+    "country": "TR",
+    "name": "Istanbul Airport",
+    "keywords": ["ist", "istambul", "istanbul", "turquia", "turkey", "tr"]
+  },
+  {
+    "code": "SAW",
+    "city": "Istambul",
+    "cityCode": "IST",
+    "country": "TR",
+    "name": "Sabiha Gökçen",
+    "keywords": ["saw", "istambul", "istanbul", "sabiha", "turquia", "turkey", "tr"]
+  },
+  {
+    "code": "JFK",
+    "city": "Nova York",
+    "cityCode": "NYC",
+    "country": "US",
+    "name": "John F. Kennedy",
+    "keywords": ["jfk", "nova york", "new york", "nyc", "eua", "usa", "estados unidos"]
+  },
+  {
+    "code": "LGA",
+    "city": "Nova York",
+    "cityCode": "NYC",
+    "country": "US",
+    "name": "LaGuardia",
+    "keywords": ["lga", "nova york", "new york", "nyc", "laguardia", "eua", "usa"]
+  },
+  {
+    "code": "EWR",
+    "city": "Newark",
+    "cityCode": "NYC",
+    "country": "US",
+    "name": "Newark Liberty",
+    "keywords": ["ewr", "newark", "nova york", "new york", "nyc", "eua", "usa", "new jersey"]
+  },
+  {
+    "code": "MIA",
+    "city": "Miami",
+    "cityCode": "MIA",
+    "country": "US",
+    "name": "Miami International",
+    "keywords": ["mia", "miami", "florida", "fl", "eua", "usa", "estados unidos"]
+  },
+  {
+    "code": "FLL",
+    "city": "Fort Lauderdale",
+    "cityCode": "MIA",
+    "country": "US",
+    "name": "Fort Lauderdale–Hollywood",
+    "keywords": ["fll", "fort lauderdale", "miami", "florida", "fl", "eua", "usa"]
+  },
+  {
+    "code": "LAX",
+    "city": "Los Angeles",
+    "cityCode": "LAX",
+    "country": "US",
+    "name": "Los Angeles International",
+    "keywords": ["lax", "los angeles", "la", "california", "ca", "eua", "usa"]
+  },
+  {
+    "code": "SFO",
+    "city": "São Francisco",
+    "cityCode": "SFO",
+    "country": "US",
+    "name": "San Francisco International",
+    "keywords": ["sfo", "sao francisco", "são francisco", "san francisco", "california", "ca", "eua", "usa"]
+  },
+  {
+    "code": "ORD",
+    "city": "Chicago",
+    "cityCode": "CHI",
+    "country": "US",
+    "name": "O'Hare International",
+    "keywords": ["ord", "chicago", "ohare", "illinois", "il", "eua", "usa"]
+  },
+  {
+    "code": "DFW",
+    "city": "Dallas",
+    "cityCode": "DFW",
+    "country": "US",
+    "name": "Dallas/Fort Worth International",
+    "keywords": ["dfw", "dallas", "fort worth", "texas", "tx", "eua", "usa"]
+  },
+  {
+    "code": "ATL",
+    "city": "Atlanta",
+    "cityCode": "ATL",
+    "country": "US",
+    "name": "Hartsfield-Jackson",
+    "keywords": ["atl", "atlanta", "georgia", "ga", "eua", "usa"]
+  },
+  {
+    "code": "BOS",
+    "city": "Boston",
+    "cityCode": "BOS",
+    "country": "US",
+    "name": "Logan International",
+    "keywords": ["bos", "boston", "massachusetts", "ma", "eua", "usa"]
+  },
+  {
+    "code": "IAD",
+    "city": "Washington",
+    "cityCode": "WAS",
+    "country": "US",
+    "name": "Dulles International",
+    "keywords": ["iad", "washington", "dulles", "dc", "eua", "usa"]
+  },
+  {
+    "code": "DCA",
+    "city": "Washington",
+    "cityCode": "WAS",
+    "country": "US",
+    "name": "Ronald Reagan National",
+    "keywords": ["dca", "washington", "reagan", "dc", "eua", "usa"]
+  },
+  {
+    "code": "SEA",
+    "city": "Seattle",
+    "cityCode": "SEA",
+    "country": "US",
+    "name": "Seattle–Tacoma International",
+    "keywords": ["sea", "seattle", "tacoma", "washington", "wa", "eua", "usa"]
+  },
+  {
+    "code": "DEN",
+    "city": "Denver",
+    "cityCode": "DEN",
+    "country": "US",
+    "name": "Denver International",
+    "keywords": ["den", "denver", "colorado", "co", "eua", "usa"]
+  },
+  {
+    "code": "LAS",
+    "city": "Las Vegas",
+    "cityCode": "LAS",
+    "country": "US",
+    "name": "Harry Reid International",
+    "keywords": ["las", "las vegas", "vegas", "nevada", "nv", "eua", "usa"]
+  },
+  {
+    "code": "MCO",
+    "city": "Orlando",
+    "cityCode": "ORL",
+    "country": "US",
+    "name": "Orlando International",
+    "keywords": ["mco", "orlando", "disney", "florida", "fl", "eua", "usa"]
+  },
+  {
+    "code": "PHX",
+    "city": "Phoenix",
+    "cityCode": "PHX",
+    "country": "US",
+    "name": "Phoenix Sky Harbor",
+    "keywords": ["phx", "phoenix", "arizona", "az", "eua", "usa"]
+  },
+  {
+    "code": "YYZ",
+    "city": "Toronto",
+    "cityCode": "YTO",
+    "country": "CA",
+    "name": "Pearson International",
+    "keywords": ["yyz", "toronto", "pearson", "canada", "ca", "ontario"]
+  },
+  {
+    "code": "YVR",
+    "city": "Vancouver",
+    "cityCode": "YVR",
+    "country": "CA",
+    "name": "Vancouver International",
+    "keywords": ["yvr", "vancouver", "canada", "ca", "british columbia", "bc"]
+  },
+  {
+    "code": "YUL",
+    "city": "Montreal",
+    "cityCode": "YMQ",
+    "country": "CA",
+    "name": "Pierre Elliott Trudeau",
+    "keywords": ["yul", "montreal", "trudeau", "canada", "ca", "quebec"]
+  },
+  {
+    "code": "MEX",
+    "city": "Cidade do México",
+    "cityCode": "MEX",
+    "country": "MX",
+    "name": "Benito Juárez",
+    "keywords": ["mex", "mexico", "cidade do mexico", "city", "benito juarez", "mx"]
+  },
+  {
+    "code": "CUN",
+    "city": "Cancún",
+    "cityCode": "CUN",
+    "country": "MX",
+    "name": "Cancún International",
+    "keywords": ["cun", "cancun", "cancún", "mexico", "mx", "caribe"]
+  },
+  {
+    "code": "GDL",
+    "city": "Guadalajara",
+    "cityCode": "GDL",
+    "country": "MX",
+    "name": "Miguel Hidalgo",
+    "keywords": ["gdl", "guadalajara", "mexico", "mx", "jalisco"]
+  },
+  {
+    "code": "PTY",
+    "city": "Cidade do Panamá",
+    "cityCode": "PTY",
+    "country": "PA",
+    "name": "Tocumen International",
+    "keywords": ["pty", "panama", "panamá", "cidade do panama", "tocumen", "pa"]
+  },
+  {
+    "code": "BOG",
+    "city": "Bogotá",
+    "cityCode": "BOG",
+    "country": "CO",
+    "name": "El Dorado",
+    "keywords": ["bog", "bogota", "bogotá", "colombia", "colômbia", "co", "el dorado"]
+  },
+  {
+    "code": "MDE",
+    "city": "Medellín",
+    "cityCode": "MDE",
+    "country": "CO",
+    "name": "José María Córdova",
+    "keywords": ["mde", "medellin", "medellín", "colombia", "colômbia", "co"]
+  },
+  {
+    "code": "SCL",
+    "city": "Santiago",
+    "cityCode": "SCL",
+    "country": "CL",
+    "name": "Arturo Merino Benítez",
+    "keywords": ["scl", "santiago", "chile", "cl"]
+  },
+  {
+    "code": "LIM",
+    "city": "Lima",
+    "cityCode": "LIM",
+    "country": "PE",
+    "name": "Jorge Chávez",
+    "keywords": ["lim", "lima", "peru", "pe"]
+  },
+  {
+    "code": "EZE",
+    "city": "Buenos Aires",
+    "cityCode": "BUE",
+    "country": "AR",
+    "name": "Ministro Pistarini – Ezeiza",
+    "keywords": ["eze", "buenos aires", "ezeiza", "argentina", "ar"]
+  },
+  {
+    "code": "AEP",
+    "city": "Buenos Aires",
+    "cityCode": "BUE",
+    "country": "AR",
+    "name": "Jorge Newbery – Aeroparque",
+    "keywords": ["aep", "buenos aires", "aeroparque", "newbery", "argentina", "ar"]
+  },
+  {
+    "code": "MVD",
+    "city": "Montevidéu",
+    "cityCode": "MVD",
+    "country": "UY",
+    "name": "Carrasco",
+    "keywords": ["mvd", "montevideu", "montevidéu", "montevideo", "uruguai", "uruguay", "uy"]
+  },
+  {
+    "code": "ASU",
+    "city": "Assunção",
+    "cityCode": "ASU",
+    "country": "PY",
+    "name": "Silvio Pettirossi",
+    "keywords": ["asu", "assuncao", "assunção", "asuncion", "paraguai", "paraguay", "py"]
+  },
+  {
+    "code": "DXB",
+    "city": "Dubai",
+    "cityCode": "DXB",
+    "country": "AE",
+    "name": "Dubai International",
+    "keywords": ["dxb", "dubai", "emirados", "uae", "ae"]
+  },
+  {
+    "code": "AUH",
+    "city": "Abu Dhabi",
+    "cityCode": "AUH",
+    "country": "AE",
+    "name": "Abu Dhabi International",
+    "keywords": ["auh", "abu dhabi", "emirados", "uae", "ae"]
+  },
+  {
+    "code": "DOH",
+    "city": "Doha",
+    "cityCode": "DOH",
+    "country": "QA",
+    "name": "Hamad International",
+    "keywords": ["doh", "doha", "qatar", "catar", "qa"]
+  },
+  {
+    "code": "JED",
+    "city": "Jeddah",
+    "cityCode": "JED",
+    "country": "SA",
+    "name": "King Abdulaziz",
+    "keywords": ["jed", "jeddah", "jedda", "jidda", "arabia saudita", "saudi arabia", "sa"]
+  },
+  {
+    "code": "RUH",
+    "city": "Riade",
+    "cityCode": "RUH",
+    "country": "SA",
+    "name": "King Khalid",
+    "keywords": ["ruh", "riade", "riyadh", "arabia saudita", "saudi arabia", "sa"]
+  },
+  {
+    "code": "CAI",
+    "city": "Cairo",
+    "cityCode": "CAI",
+    "country": "EG",
+    "name": "Cairo International",
+    "keywords": ["cai", "cairo", "egito", "egypt", "eg"]
+  },
+  {
+    "code": "JNB",
+    "city": "Joanesburgo",
+    "cityCode": "JNB",
+    "country": "ZA",
+    "name": "O.R. Tambo International",
+    "keywords": ["jnb", "joanesburgo", "johannesburg", "africa do sul", "south africa", "za"]
+  },
+  {
+    "code": "CPT",
+    "city": "Cidade do Cabo",
+    "cityCode": "CPT",
+    "country": "ZA",
+    "name": "Cape Town International",
+    "keywords": ["cpt", "cidade do cabo", "cape town", "africa do sul", "south africa", "za"]
+  },
+  {
+    "code": "NRT",
+    "city": "Tóquio",
+    "cityCode": "TYO",
+    "country": "JP",
+    "name": "Narita",
+    "keywords": ["nrt", "toquio", "tóquio", "tokyo", "narita", "japao", "japão", "japan", "jp"]
+  },
+  {
+    "code": "HND",
+    "city": "Tóquio",
+    "cityCode": "TYO",
+    "country": "JP",
+    "name": "Haneda",
+    "keywords": ["hnd", "toquio", "tóquio", "tokyo", "haneda", "japao", "japão", "japan", "jp"]
+  },
+  {
+    "code": "ICN",
+    "city": "Seul",
+    "cityCode": "SEL",
+    "country": "KR",
+    "name": "Incheon",
+    "keywords": ["icn", "seul", "seoul", "incheon", "coreia do sul", "south korea", "kr"]
+  },
+  {
+    "code": "PEK",
+    "city": "Pequim",
+    "cityCode": "BJS",
+    "country": "CN",
+    "name": "Capital International",
+    "keywords": ["pek", "pequim", "beijing", "peking", "china", "cn"]
+  },
+  {
+    "code": "PVG",
+    "city": "Xangai",
+    "cityCode": "SHA",
+    "country": "CN",
+    "name": "Pudong",
+    "keywords": ["pvg", "xangai", "shanghai", "pudong", "china", "cn"]
+  },
+  {
+    "code": "HKG",
+    "city": "Hong Kong",
+    "cityCode": "HKG",
+    "country": "HK",
+    "name": "Hong Kong International",
+    "keywords": ["hkg", "hong kong", "hongkong", "hk"]
+  },
+  {
+    "code": "SIN",
+    "city": "Singapura",
+    "cityCode": "SIN",
+    "country": "SG",
+    "name": "Changi",
+    "keywords": ["sin", "singapura", "singapore", "changi", "sg"]
+  },
+  {
+    "code": "BKK",
+    "city": "Bangkok",
+    "cityCode": "BKK",
+    "country": "TH",
+    "name": "Suvarnabhumi",
+    "keywords": ["bkk", "bangkok", "tailandia", "thailand", "th", "suvarnabhumi"]
+  },
+  {
+    "code": "KUL",
+    "city": "Kuala Lumpur",
+    "cityCode": "KUL",
+    "country": "MY",
+    "name": "Kuala Lumpur International",
+    "keywords": ["kul", "kuala lumpur", "malasia", "malásia", "malaysia", "my"]
+  },
+  {
+    "code": "SYD",
+    "city": "Sydney",
+    "cityCode": "SYD",
+    "country": "AU",
+    "name": "Kingsford Smith",
+    "keywords": ["syd", "sydney", "australia", "austrália", "au"]
+  },
+  {
+    "code": "MEL",
+    "city": "Melbourne",
+    "cityCode": "MEL",
+    "country": "AU",
+    "name": "Tullamarine",
+    "keywords": ["mel", "melbourne", "australia", "austrália", "au"]
+  },
+  {
+    "code": "AKL",
+    "city": "Auckland",
+    "cityCode": "AKL",
+    "country": "NZ",
+    "name": "Auckland",
+    "keywords": ["akl", "auckland", "nova zelandia", "nova zelândia", "new zealand", "nz"]
+  },
+  {
+    "code": "DEL",
+    "city": "Nova Delhi",
+    "cityCode": "DEL",
+    "country": "IN",
+    "name": "Indira Gandhi",
+    "keywords": ["del", "nova delhi", "new delhi", "delhi", "india", "índia", "in"]
+  },
+  {
+    "code": "BOM",
+    "city": "Mumbai",
+    "cityCode": "BOM",
+    "country": "IN",
+    "name": "Chhatrapati Shivaji",
+    "keywords": ["bom", "mumbai", "bombay", "bombaim", "india", "índia", "in"]
+  },
+  {
+    "code": "TLV",
+    "city": "Tel Aviv",
+    "cityCode": "TLV",
+    "country": "IL",
+    "name": "Ben Gurion",
+    "keywords": ["tlv", "tel aviv", "israel", "il"]
+  }
+]
+

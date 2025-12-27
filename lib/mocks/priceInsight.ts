@@ -1,8 +1,10 @@
 /**
- * Mock data para Price Insight (Contexto de Preço)
- * 
- * Em produção, isso viria de uma API que calcula médias históricas
- * baseadas em buscas e preços reais.
+ * @deprecated This mock file is deprecated.
+ * Price insights are now based on real historical data.
+ * Use lib/price/insight.ts instead.
+ *
+ * This file is kept for backwards compatibility with tests only.
+ * DO NOT use in production code.
  */
 
 import type { SearchState } from "@/lib/types/search";

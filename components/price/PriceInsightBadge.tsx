@@ -1,17 +1,36 @@
 "use client";
 
 import { formatPrice } from "@/lib/mocks/flights";
-import type { PriceInsight } from "@/lib/mocks/priceInsight";
+import type { FlightResult } from "@/lib/search/types";
+
+/**
+ * Price insight data from FlightResult.priceInsight
+ */
+type PriceInsightData = NonNullable<FlightResult["priceInsight"]>;
 
 interface PriceInsightBadgeProps {
-  insight: PriceInsight;
+  /** Price insight data from FlightResult.priceInsight */
+  insight: PriceInsightData | null | undefined;
   className?: string;
 }
 
+/**
+ * PriceInsightBadge - Displays price insight based on historical data
+ *
+ * Only displays if:
+ * - Insight data is present (comes from API, based on real history)
+ * - Price is below average
+ *
+ * If no historical data exists, insight will be null and nothing is shown.
+ */
 export function PriceInsightBadge({ insight, className = "" }: PriceInsightBadgeProps) {
-  if (insight.priceDifference <= 0) return null; // Não exibe se não estiver abaixo da média
+  // No insight = no historical data = don't show anything
+  if (!insight) return null;
 
-  const isLowest = insight.isLowestRecent;
+  // Only show if price is below average
+  if (insight.priceDifference <= 0) return null;
+
+  const isLowest = insight.isLowestRecorded;
 
   return (
     <div

@@ -15,12 +15,16 @@
 export interface Airport {
   /** IATA code (e.g., "GRU", "LIS") */
   code: string;
-  /** City name in lowercase (e.g., "são paulo", "lisboa") */
+  /** City name (e.g., "São Paulo", "Lisboa") */
   city: string;
-  /** Country name in lowercase (e.g., "brasil", "portugal") */
+  /** Country code or name (e.g., "BR", "PT", "brasil") */
   country: string;
-  /** Full airport name in lowercase */
+  /** Full airport name */
   name: string;
+  /** City code for multi-airport cities (e.g., "SAO", "NYC") - optional for backwards compatibility */
+  cityCode?: string;
+  /** Search keywords - optional for backwards compatibility */
+  keywords?: string[];
 }
 
 // ============================================================================
@@ -149,6 +153,26 @@ export interface FlightResult {
 
   /** Whether arrival is on the next day */
   nextDayArrival?: boolean;
+
+  /** Price insight based on historical data (if available) */
+  priceInsight?: {
+    /** Historical average price */
+    avgPrice: number;
+    /** Minimum price recorded */
+    minPrice: number;
+    /** Maximum price recorded */
+    maxPrice: number;
+    /** Difference from average (positive = cheaper) */
+    priceDifference: number;
+    /** Percentage difference */
+    percentageDifference: number;
+    /** Whether current price is below average */
+    isBelowAverage: boolean;
+    /** Whether current price is the lowest recorded */
+    isLowestRecorded: boolean;
+    /** Number of samples */
+    sampleCount: number;
+  };
 }
 
 /**
@@ -212,6 +236,9 @@ export interface SearchResponse {
   /** Data source indicator */
   source: "amadeus" | "mock";
 
+  /** Session ID for retrieving results later */
+  sid?: string;
+
   /** Response metadata */
   meta: {
     /** Total number of results */
@@ -226,11 +253,28 @@ export interface SearchResponse {
 }
 
 /**
+ * Known error codes for SearchError
+ */
+export type SearchErrorCode =
+  | "VALIDATION_ERROR"
+  | "AMADEUS_DISABLED"
+  | "AMADEUS_ERROR"
+  | "RATE_LIMITED"
+  | "INTERNAL_ERROR"
+  | "NETWORK_ERROR"
+  | "FLIGHT_NOT_FOUND"
+  | "FLIGHT_CONTEXT_MISSING"
+  | "INVALID_PARAMS"
+  | "INVALID_ID"
+  | "ABORTED"
+  | "UNKNOWN_ERROR";
+
+/**
  * SearchError - API error response format
  */
 export interface SearchError {
-  /** Error code (e.g., "VALIDATION_ERROR", "AMADEUS_DISABLED") */
-  code: string;
+  /** Error code */
+  code: SearchErrorCode | string;
 
   /** Human-readable error message */
   message: string;
@@ -242,7 +286,12 @@ export interface SearchError {
   }>;
 
   /** Original error details (for debugging) */
-  details?: unknown;
+  details?: {
+    /** Seconds until rate limit resets (for RATE_LIMITED) */
+    resetSec?: number;
+    /** Additional context */
+    [key: string]: unknown;
+  };
 
   /** Request ID for tracing */
   requestId?: string;

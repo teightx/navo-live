@@ -3,6 +3,11 @@
  *
  * Client-side function to call /api/flights/search
  * Used by the results page to fetch real flight data
+ *
+ * MOCK POLICY:
+ * - Production: NEVER use mocks, errors surface to UI
+ * - Development: Use mocks ONLY if USE_MOCKS === "true" (via NEXT_PUBLIC_USE_MOCKS)
+ * - 429 Rate Limited: ALWAYS surface error (never fallback to mock)
  */
 
 import type {
@@ -33,6 +38,8 @@ export interface SearchFlightsResult {
   flights: FlightResult[];
   /** Data source */
   source: "amadeus" | "mock";
+  /** Session ID for retrieving results later */
+  sid?: string;
   /** Response metadata */
   meta: {
     count: number;
@@ -44,7 +51,36 @@ export interface SearchFlightsResult {
   error?: {
     code: string;
     message: string;
+    /** Request ID for support/debugging */
+    requestId?: string;
+    /** Additional details */
+    details?: {
+      resetSec?: number;
+      [key: string]: unknown;
+    };
   };
+}
+
+// ============================================================================
+// Environment Detection
+// ============================================================================
+
+/**
+ * Check if running in production
+ */
+function isProduction(): boolean {
+  return process.env.NODE_ENV === "production";
+}
+
+/**
+ * Check if mocks are enabled (via public env var)
+ * Only valid in development
+ */
+function areMocksEnabled(): boolean {
+  if (isProduction()) {
+    return false; // Never enable mocks in production
+  }
+  return process.env.NEXT_PUBLIC_USE_MOCKS === "true";
 }
 
 // ============================================================================
@@ -114,6 +150,13 @@ function buildQueryString(
   return params.toString();
 }
 
+/**
+ * Extract request ID from response headers
+ */
+function extractRequestId(response: Response): string | undefined {
+  return response.headers.get("X-Request-Id") ?? undefined;
+}
+
 // ============================================================================
 // Main Function
 // ============================================================================
@@ -162,46 +205,91 @@ export async function searchFlights(
       signal: options.signal,
     });
 
+    const requestId = extractRequestId(response);
     const data = await response.json();
 
     // Handle error responses
     if (!response.ok) {
       const errorData = data as SearchError;
 
-      // Special handling for AMADEUS_DISABLED
-      if (errorData.code === "AMADEUS_DISABLED") {
+      // ========================================================================
+      // RATE LIMITED - Never fallback to mock
+      // ========================================================================
+      if (response.status === 429 || errorData.code === "RATE_LIMITED") {
         return {
           flights: [],
-          source: "mock",
+          source: "amadeus",
           meta: { count: 0, durationMs: 0 },
           error: {
-            code: "AMADEUS_DISABLED",
-            message: "Busca de voos temporariamente indisponível. Tente novamente mais tarde.",
+            code: "RATE_LIMITED",
+            message: errorData.message || "Muitas buscas em pouco tempo. Tente novamente.",
+            requestId: requestId || errorData.requestId,
+            details: errorData.details,
           },
         };
       }
 
-      // Validation errors
+      // ========================================================================
+      // AMADEUS DISABLED - Mock only in dev with flag
+      // ========================================================================
+      if (errorData.code === "AMADEUS_DISABLED") {
+        // In production or if mocks disabled: surface error
+        if (isProduction() || !areMocksEnabled()) {
+          return {
+            flights: [],
+            source: "amadeus",
+            meta: { count: 0, durationMs: 0 },
+            error: {
+              code: "AMADEUS_DISABLED",
+              message: "Busca de voos temporariamente indisponível. Tente novamente mais tarde.",
+              requestId: requestId || errorData.requestId,
+            },
+          };
+        }
+
+        // Dev with mocks enabled: will be handled by calling code
+        // Return error so caller can decide to use mock
+        return {
+          flights: [],
+          source: "amadeus",
+          meta: { count: 0, durationMs: 0 },
+          error: {
+            code: "AMADEUS_DISABLED",
+            message: "Amadeus disabled, mocks available",
+            requestId: requestId || errorData.requestId,
+          },
+        };
+      }
+
+      // ========================================================================
+      // VALIDATION ERRORS
+      // ========================================================================
       if (errorData.code === "VALIDATION_ERROR") {
         return {
           flights: [],
-          source: "mock",
+          source: "amadeus",
           meta: { count: 0, durationMs: 0 },
           error: {
             code: "VALIDATION_ERROR",
             message: errorData.message || "Parâmetros de busca inválidos",
+            requestId: requestId || errorData.requestId,
           },
         };
       }
 
-      // Other API errors
+      // ========================================================================
+      // OTHER API ERRORS (5xx, etc.)
+      // ========================================================================
+      // In production: always surface error
+      // In dev with mocks: caller can decide to use mock
       return {
         flights: [],
-        source: "mock",
+        source: "amadeus",
         meta: { count: 0, durationMs: data._meta?.durationMs || 0 },
         error: {
           code: errorData.code || "API_ERROR",
           message: errorData.message || "Erro ao buscar voos",
+          requestId: requestId || errorData.requestId,
         },
       };
     }
@@ -212,6 +300,7 @@ export async function searchFlights(
     return {
       flights: searchResponse.flights,
       source: searchResponse.source,
+      sid: searchResponse.sid,
       meta: searchResponse.meta,
     };
   } catch (error) {
@@ -221,7 +310,7 @@ export async function searchFlights(
       if (error.name === "AbortError") {
         return {
           flights: [],
-          source: "mock",
+          source: "amadeus",
           meta: { count: 0, durationMs: 0 },
           error: {
             code: "ABORTED",
@@ -230,10 +319,10 @@ export async function searchFlights(
         };
       }
 
-      // Network error
+      // Network error - never use mock in production
       return {
         flights: [],
-        source: "mock",
+        source: "amadeus",
         meta: { count: 0, durationMs: 0 },
         error: {
           code: "NETWORK_ERROR",
@@ -245,7 +334,7 @@ export async function searchFlights(
     // Unknown error
     return {
       flights: [],
-      source: "mock",
+      source: "amadeus",
       meta: { count: 0, durationMs: 0 },
       error: {
         code: "UNKNOWN_ERROR",
@@ -268,3 +357,10 @@ export async function checkAmadeusStatus(): Promise<boolean> {
   }
 }
 
+/**
+ * Check if mocks should be used for fallback
+ * Export for use in UI components
+ */
+export function shouldUseMockFallback(): boolean {
+  return !isProduction() && areMocksEnabled();
+}

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, ReactNode } from "react";
 import { FloatingPopover } from "@/components/ui/FloatingPopover";
-import { airports, type Airport } from "@/lib/mocks/airports";
+import { searchAirports, type Airport } from "@/lib/airports";
 
 interface AirportFieldProps {
   label: string;
@@ -32,18 +32,13 @@ export function AirportField({
     ? `${value.city.toLowerCase()} (${value.code.toLowerCase()})`
     : "";
 
-  const filtered = airports.filter((airport) => {
-    if (exclude && airport.code === exclude) return false;
-    if (!query) return true;
-    const q = query.toLowerCase();
-    return (
-      airport.city.toLowerCase().includes(q) ||
-      airport.code.toLowerCase().includes(q) ||
-      airport.name.toLowerCase().includes(q)
-    );
-  });
+  // Use the real search function
+  const searchResults = searchAirports(query, 10);
 
-  const suggestions = query ? filtered : filtered.slice(0, 8);
+  // Filter out excluded airport and limit results
+  const suggestions = searchResults
+    .filter((airport) => !exclude || airport.code !== exclude)
+    .slice(0, 8);
 
   useEffect(() => {
     setHighlightIndex(0);
@@ -57,7 +52,14 @@ export function AirportField({
   }, [highlightIndex, isOpen]);
 
   function handleSelect(airport: Airport) {
-    onChange(airport);
+    // Convert to the format expected by the search state
+    const searchAirport = {
+      code: airport.code,
+      city: airport.city.toLowerCase(),
+      country: airport.country.toLowerCase(),
+      name: airport.name.toLowerCase(),
+    };
+    onChange(searchAirport as Airport);
     setQuery("");
     setIsOpen(false);
   }
@@ -95,8 +97,8 @@ export function AirportField({
   }
 
   function handleFocus() {
-    // Não abrir automaticamente se o input já tem valor (evita abrir ao focar no modal)
-    // O usuário pode clicar ou digitar para abrir
+    // Don't auto-open if input already has a value (avoids opening on modal focus)
+    // User can click or type to open
     if (!value) {
       setIsOpen(true);
       setQuery("");
@@ -104,7 +106,7 @@ export function AirportField({
   }
 
   function handleBlur() {
-    // Pequeno delay para permitir cliques no popover
+    // Small delay to allow clicks on popover
     setTimeout(() => {
       setIsOpen(false);
       setQuery("");

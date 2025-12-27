@@ -47,19 +47,19 @@ export const AIRLINES: Record<string, AirlineInfo> = {
   UA: { name: "United Airlines", color: "#002244", hasLogo: true },
   DL: { name: "Delta Air Lines", color: "#003366", hasLogo: true },
   AC: { name: "Air Canada", color: "#F01428", hasLogo: true },
-  WN: { name: "Southwest", color: "#304CB2", hasLogo: false },
+  WN: { name: "Southwest", color: "#304CB2", hasLogo: true },
 
   // Middle East / Asia
   EK: { name: "Emirates", color: "#D71A21", hasLogo: true },
   QR: { name: "Qatar Airways", color: "#5C0632", hasLogo: true },
-  EY: { name: "Etihad", color: "#BD8B13", hasLogo: false },
+  EY: { name: "Etihad", color: "#BD8B13", hasLogo: true },
   TK: { name: "Turkish Airlines", color: "#E81932", hasLogo: true },
-  SQ: { name: "Singapore Airlines", color: "#F7BA00", hasLogo: false },
+  SQ: { name: "Singapore Airlines", color: "#F7BA00", hasLogo: true },
 
   // South American carriers
-  AR: { name: "Aerolíneas Argentinas", color: "#0080C9", hasLogo: false },
-  CM: { name: "Copa Airlines", color: "#003876", hasLogo: false },
-  AV: { name: "Avianca", color: "#E31837", hasLogo: false },
+  AR: { name: "Aerolíneas Argentinas", color: "#0080C9", hasLogo: true },
+  CM: { name: "Copa Airlines", color: "#003876", hasLogo: true },
+  AV: { name: "Avianca", color: "#E31837", hasLogo: true },
 };
 
 // ============================================================================

@@ -1,77 +1,197 @@
+"use client";
+
 /**
- * Componente para renderizar logos de parceiros
- * Altura máxima fixa para manter alinhamento vertical
+ * Partner Logo Component (PNG version)
+ *
+ * ALWAYS tries to load the PNG from /public/partners-png/{slug}.png
+ * Falls back to colored badge with initial if image fails to load.
+ *
+ * hasAsset from registry is used only as a debug hint, NOT as a gate.
+ * This prevents human error (forgetting to set hasAsset: true) from
+ * hiding logos that actually exist in /public.
+ *
+ * Enable debug mode with NEXT_PUBLIC_LOGO_DEBUG=true to see asset status.
  */
 
-import type { ReactElement } from "react";
+import Image from "next/image";
+import { useState, useEffect } from "react";
+import {
+  getPartnerFromRegistry,
+  getPartnerAsset,
+  getPartnerColorFromRegistry,
+  getPartnerNameFromRegistry,
+  hasPartnerAsset,
+} from "@/lib/partners/registry";
+
+// ============================================================================
+// Types
+// ============================================================================
+
+type LogoSize = "sm" | "md" | "lg";
 
 interface PartnerLogoProps {
-  partnerId: string;
+  /** Partner slug (e.g., "decolar", "kayak") */
+  slug: string;
+  /** Size variant */
+  size?: LogoSize;
+  /** Additional CSS classes */
   className?: string;
+  /** Show tooltip with partner name */
+  showTooltip?: boolean;
+  /** Enable debug mode (shows asset status) */
+  debug?: boolean;
 }
 
-export function PartnerLogo({ partnerId, className = "" }: PartnerLogoProps) {
-  const logoSize = 40; // Altura máxima fixa
-  
-  // Logos como SVG inline para manter qualidade e controle
-  const logos: Record<string, ReactElement> = {
-    decolar: (
-      <svg width={logoSize} height={logoSize} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="100" height="100" rx="8" fill="#FF6B35"/>
-        <path d="M30 35L50 55L70 35" stroke="white" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round"/>
-        <circle cx="50" cy="65" r="8" fill="white"/>
-      </svg>
-    ),
-    maxmilhas: (
-      <svg width={logoSize} height={logoSize} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="100" height="100" rx="8" fill="#00A859"/>
-        <path d="M25 50L45 70L75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    ),
-    google: (
-      <svg width={logoSize} height={logoSize} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="100" height="100" rx="8" fill="#4285F4"/>
-        <path d="M30 50L50 30L70 50L50 70Z" fill="white"/>
-      </svg>
-    ),
-    kayak: (
-      <svg width={logoSize} height={logoSize} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="100" height="100" rx="8" fill="#005580"/>
-        <path d="M25 50L50 25L75 50L50 75Z" fill="white"/>
-      </svg>
-    ),
-    skyscanner: (
-      <svg width={logoSize} height={logoSize} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="100" height="100" rx="8" fill="#0770E3"/>
-        <circle cx="50" cy="50" r="20" fill="white"/>
-        <path d="M35 50L50 35L65 50L50 65Z" fill="#0770E3"/>
-      </svg>
-    ),
-  };
+// ============================================================================
+// Size Map
+// ============================================================================
 
-  const logo = logos[partnerId.toLowerCase()];
-  
-  if (!logo) {
-    // Fallback: inicial do parceiro em círculo
+const SIZE_MAP: Record<LogoSize, number> = {
+  sm: 32,
+  md: 40,
+  lg: 56,
+};
+
+// ============================================================================
+// Debug Mode
+// ============================================================================
+
+const isDebugEnabled = (): boolean => {
+  if (typeof window === "undefined") return false;
+  if (process.env.NODE_ENV === "production") return false;
+  return process.env.NEXT_PUBLIC_LOGO_DEBUG === "true";
+};
+
+// ============================================================================
+// Component
+// ============================================================================
+
+export function PartnerLogo({
+  slug,
+  size = "md",
+  className = "",
+  showTooltip = false,
+  debug = false,
+}: PartnerLogoProps) {
+  const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Reset error state if slug changes
+  useEffect(() => {
+    setImgError(false);
+    setImgLoaded(false);
+  }, [slug]);
+
+  const lowerSlug = slug.toLowerCase();
+  const partner = getPartnerFromRegistry(lowerSlug);
+  const assetPath = getPartnerAsset(lowerSlug);
+  const color = getPartnerColorFromRegistry(lowerSlug);
+  const pixelSize = SIZE_MAP[size];
+  const registryHasAsset = hasPartnerAsset(lowerSlug);
+
+  const name = partner?.name || getPartnerNameFromRegistry(lowerSlug) || slug;
+  const showDebug = mounted && (debug || isDebugEnabled());
+
+  // Debug badge component
+  const DebugBadge = ({ status }: { status: "ok" | "missing" | "pending" }) => {
+    if (!showDebug) return null;
+
+    const colors = {
+      ok: "#22c55e",      // green
+      missing: "#ef4444", // red
+      pending: "#f59e0b", // yellow
+    };
+
+    const labels = {
+      ok: "OK",
+      missing: "MISSING",
+      pending: "...",
+    };
+
     return (
       <div
-        className={`flex items-center justify-center rounded-lg font-semibold ${className}`}
+        className="absolute -top-1 -right-1 px-1 py-0.5 rounded text-[8px] font-mono z-10 whitespace-nowrap"
         style={{
-          width: logoSize,
-          height: logoSize,
-          background: "var(--cream-dark)",
-          color: "var(--ink-soft)",
+          backgroundColor: colors[status],
+          color: "white",
         }}
+        title={`${assetPath}${registryHasAsset ? "" : " (hasAsset: false in registry)"}`}
       >
-        {partnerId.charAt(0).toUpperCase()}
+        {labels[status]}
       </div>
+    );
+  };
+
+  // Wrapper with optional tooltip
+  const Wrapper = ({ children }: { children: React.ReactNode }) => {
+    if (showTooltip) {
+      return (
+        <div className="relative group">
+          {children}
+          <div
+            className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10"
+            style={{
+              background: "var(--ink)",
+              color: "var(--cream)",
+            }}
+          >
+            {name}
+          </div>
+        </div>
+      );
+    }
+    return <>{children}</>;
+  };
+
+  // Always try to render the image first
+  // The image will fallback on error
+  if (assetPath && !imgError) {
+    return (
+      <Wrapper>
+        <div
+          className={`relative overflow-hidden rounded-lg flex items-center justify-center ${className}`}
+          style={{
+            width: pixelSize,
+            height: pixelSize,
+          }}
+        >
+          <Image
+            src={assetPath}
+            alt={name}
+            width={pixelSize}
+            height={pixelSize}
+            className="object-contain"
+            onError={() => setImgError(true)}
+            onLoad={() => setImgLoaded(true)}
+          />
+          <DebugBadge status={imgLoaded ? "ok" : "pending"} />
+        </div>
+      </Wrapper>
     );
   }
 
+  // Fallback: colored badge with initial
   return (
-    <div className={`flex-shrink-0 ${className}`} style={{ width: logoSize, height: logoSize }}>
-      {logo}
-    </div>
+    <Wrapper>
+      <div
+        className={`relative rounded-lg flex items-center justify-center text-white font-bold ${className}`}
+        style={{
+          width: pixelSize,
+          height: pixelSize,
+          backgroundColor: color,
+          fontSize: pixelSize * 0.4,
+        }}
+        role="img"
+        aria-label={name}
+      >
+        {name.charAt(0).toUpperCase()}
+        <DebugBadge status="missing" />
+      </div>
+    </Wrapper>
   );
 }
-

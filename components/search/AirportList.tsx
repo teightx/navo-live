@@ -1,6 +1,6 @@
 "use client";
 
-import { Airport, formatAirport } from "@/lib/mocks/airports";
+import { Airport, formatAirport } from "@/lib/airports";
 
 interface AirportListProps {
   airports: Airport[];

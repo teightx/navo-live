@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "check:amadeus": "bash scripts/check-amadeus-security.sh"
+    "check:amadeus": "bash scripts/check-amadeus-security.sh",
+    "check:assets": "node scripts/validate-assets.mjs"
   },
   "dependencies": {
     "@floating-ui/react-dom": "^2.1.6",

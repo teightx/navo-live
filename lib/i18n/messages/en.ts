@@ -80,6 +80,11 @@ export const en: Messages = {
     searchSaved: "search saved",
     removeSearch: "remove search",
     saving: "saving...",
+    // Rate limit error
+    rateLimitTitle: "too many searches",
+    rateLimitMessage: "you've made too many searches in a short time. please wait a few seconds and try again.",
+    rateLimitRetry: "try again in {seconds}s",
+    requestCode: "code: {code}",
   },
 
   // Flight Details
@@ -95,6 +100,22 @@ export const en: Messages = {
     pricesSubjectToChange: "prices subject to change · check on partner website",
     back: "back",
     flightNotFound: "flight not found",
+    contextMissingTitle: "search context not found",
+    contextMissingMessage: "we couldn't retrieve the details for this flight. please go back to results or start a new search.",
+    backToResults: "back to results",
+    newSearch: "new search",
+    whereToBook: "where to book",
+    officialSite: "official site",
+    goToSite: "go to site",
+    comingSoon: "coming soon",
+    goToAirline: "go to site",
+    partnersComingSoon: "partner price comparison coming soon.",
+    partnersDisclaimer: "we redirect to partners. prices may vary.",
+    flightPriceLabel: "this flight's price",
+    errorTitle: "error loading",
+    errorMessage: "could not load flight details.",
+    tryAgain: "try again",
+    flightExpired: "the offer may have expired. please start a new search.",
   },
 
   // Footer

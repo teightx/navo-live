@@ -6,7 +6,7 @@ import { OPPORTUNITIES, type Opportunity } from "@/lib/mocks/opportunities";
 import { formatPrice } from "@/lib/mocks/flights";
 import { serializeSearchState } from "@/lib/utils/searchParams";
 import { defaultSearchState } from "@/lib/types/search";
-import { getAirportByCode } from "@/lib/mocks/airports";
+import { getAirportByCode } from "@/lib/airports";
 
 // Feature flag: set to true when real price monitoring is implemented
 const SHOW_OPPORTUNITIES = true;

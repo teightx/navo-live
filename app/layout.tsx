@@ -16,10 +16,31 @@ export const metadata: Metadata = {
     default: "navo — acompanhe preços de passagens",
     template: "%s | navo",
   },
-  description: "preços mudam. a gente acompanha. compare passagens aéreas e encontre o melhor momento para comprar.",
-  keywords: ["passagens aéreas", "voos baratos", "comparador de preços", "alertas de preço", "viagem"],
+  description:
+    "preços mudam. a gente acompanha. compare passagens aéreas e encontre o melhor momento para comprar.",
+  keywords: [
+    "passagens aéreas",
+    "voos baratos",
+    "comparador de preços",
+    "alertas de preço",
+    "viagem",
+    "milhas",
+    "promoção de passagens",
+  ],
   authors: [{ name: "navo" }],
   creator: "navo",
+  publisher: "navo",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   openGraph: {
     type: "website",
     locale: "pt_BR",
@@ -27,32 +48,18 @@ export const metadata: Metadata = {
     url: "https://www.navo.live",
     siteName: "navo",
     title: "navo — acompanhe preços de passagens",
-    description: "preços mudam. a gente acompanha. compare passagens aéreas e encontre o melhor momento para comprar.",
-    images: [
-      {
-        url: "/og.svg",
-        width: 1200,
-        height: 630,
-        alt: "navo - acompanhe preços de passagens",
-      },
-    ],
+    description:
+      "preços mudam. a gente acompanha. compare passagens aéreas e encontre o melhor momento para comprar.",
   },
   twitter: {
     card: "summary_large_image",
+    site: "@navolive",
+    creator: "@navolive",
     title: "navo — acompanhe preços de passagens",
     description: "preços mudam. a gente acompanha.",
-    images: ["/og.svg"],
-  },
-  icons: {
-    icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon.png", type: "image/png", sizes: "512x512" },
-    ],
-    apple: [
-      { url: "/apple-touch-icon.png", sizes: "180x180" },
-    ],
   },
   manifest: "/manifest.json",
+  category: "travel",
 };
 
 export default function RootLayout({

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Popover } from "./Popover";
-import { airports, type Airport } from "@/lib/mocks/airports";
+import { searchAirports, getAllAirports, type Airport } from "@/lib/airports";
 
 interface AirportPopoverProps {
   isOpen: boolean;
@@ -30,15 +30,12 @@ export function AirportPopover({
     }
   }, [isOpen]);
 
-  const filtered = airports.filter((airport) => {
-    if (exclude && airport.code === exclude) return false;
-    const q = query.toLowerCase();
-    return (
-      airport.city.toLowerCase().includes(q) ||
-      airport.code.toLowerCase().includes(q) ||
-      airport.name.toLowerCase().includes(q)
-    );
-  });
+  // Use real search when query exists, otherwise show first airports
+  const filtered = query.length >= 2
+    ? searchAirports(query, 10).filter((airport) => !exclude || airport.code !== exclude)
+    : getAllAirports()
+        .filter((airport) => !exclude || airport.code !== exclude)
+        .slice(0, 10);
 
   function handleSelect(airport: Airport) {
     onSelect(airport);

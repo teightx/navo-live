@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { Suspense, useState, useEffect, useMemo } from "react";
+import { Suspense, useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { LogoMark, Wordmark } from "@/components/brand";
 import { Footer, ThemeToggle, LanguageToggle } from "@/components/layout";
@@ -10,11 +10,26 @@ import { FlightCard } from "@/components/flights";
 import { ResultsFilters, type FilterType } from "@/components/results";
 import { useI18n } from "@/lib/i18n";
 import type { SearchState, FlightResult } from "@/lib/search/types";
-import { searchFlights } from "@/lib/search/searchFlights";
+import { searchFlights, shouldUseMockFallback } from "@/lib/search/searchFlights";
 import { mockSearch } from "@/lib/search/mockSearch";
 import { parseSearchParams, normalizeSearchState, serializeSearchState } from "@/lib/utils/searchParams";
 import { findBestOffer, calculateAveragePrice, calculateScore, parseDurationToMinutes } from "@/lib/utils/bestOffer";
 import { saveSearch, removeSearch, isSearchSaved } from "@/lib/utils/savedSearches";
+
+// ============================================================================
+// Types
+// ============================================================================
+
+interface SearchErrorInfo {
+  code: string;
+  message: string;
+  requestId?: string;
+  resetSec?: number;
+}
+
+// ============================================================================
+// Loading Skeleton Component
+// ============================================================================
 
 function LoadingSkeleton() {
   return (
@@ -49,6 +64,10 @@ function LoadingSkeleton() {
   );
 }
 
+// ============================================================================
+// Empty State Component
+// ============================================================================
+
 function EmptyState({ onEditSearch }: { onEditSearch: () => void }) {
   const { t } = useI18n();
   
@@ -73,7 +92,89 @@ function EmptyState({ onEditSearch }: { onEditSearch: () => void }) {
   );
 }
 
-function ErrorState({ onRetry }: { onRetry: () => void }) {
+// ============================================================================
+// Rate Limit Error Component
+// ============================================================================
+
+function RateLimitState({ 
+  error, 
+  onRetry, 
+  onEditSearch,
+  retryCountdown,
+}: { 
+  error: SearchErrorInfo;
+  onRetry: () => void;
+  onEditSearch: () => void;
+  retryCountdown: number;
+}) {
+  const { t } = useI18n();
+  
+  return (
+    <div 
+      className="rounded-xl p-6 border"
+      style={{
+        background: "var(--card-bg)",
+        borderColor: "var(--accent)",
+      }}
+    >
+      <div className="flex items-start gap-4">
+        <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "rgba(var(--accent-rgb), 0.1)" }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ color: "var(--accent)" }}>
+            <path d="M12 8V12L15 15M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </div>
+        <div className="flex-1">
+          <h3 className="text-sm font-medium text-ink mb-1">{t.results.rateLimitTitle}</h3>
+          <p className="text-xs text-ink-muted mb-4">{t.results.rateLimitMessage}</p>
+          
+          {/* Request ID for support */}
+          {error.requestId && (
+            <p className="text-xs text-ink-muted mb-4 font-mono">
+              {t.results.requestCode.replace("{code}", error.requestId.slice(0, 8))}
+            </p>
+          )}
+          
+          <div className="flex gap-3">
+            <button
+              onClick={onRetry}
+              disabled={retryCountdown > 0}
+              className="px-4 py-2 bg-blue text-cream-soft rounded-lg text-xs font-medium lowercase hover:bg-blue-soft transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {retryCountdown > 0 
+                ? t.results.rateLimitRetry.replace("{seconds}", String(retryCountdown))
+                : t.results.tryAgain
+              }
+            </button>
+            <button
+              onClick={onEditSearch}
+              className="px-4 py-2 border rounded-lg text-xs font-medium lowercase transition-colors"
+              style={{
+                borderColor: "var(--card-border)",
+                color: "var(--ink)",
+              }}
+            >
+              {t.results.editSearch}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Generic Error State Component
+// ============================================================================
+
+function ErrorState({ 
+  error,
+  onRetry, 
+  onEditSearch,
+}: { 
+  error?: SearchErrorInfo;
+  onRetry: () => void;
+  onEditSearch: () => void;
+}) {
   const { t } = useI18n();
   
   return (
@@ -92,18 +193,42 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
         </div>
         <div className="flex-1">
           <h3 className="text-sm font-medium text-ink mb-1">{t.results.errorTitle}</h3>
-          <p className="text-xs text-ink-muted mb-4">{t.results.errorMessage}</p>
-          <button
-            onClick={onRetry}
-            className="px-4 py-2 bg-blue text-cream-soft rounded-lg text-xs font-medium lowercase hover:bg-blue-soft transition-colors"
-          >
-            {t.results.tryAgain}
-          </button>
+          <p className="text-xs text-ink-muted mb-4">{error?.message || t.results.errorMessage}</p>
+          
+          {/* Request ID for support */}
+          {error?.requestId && (
+            <p className="text-xs text-ink-muted mb-4 font-mono">
+              {t.results.requestCode.replace("{code}", error.requestId.slice(0, 8))}
+            </p>
+          )}
+          
+          <div className="flex gap-3">
+            <button
+              onClick={onRetry}
+              className="px-4 py-2 bg-blue text-cream-soft rounded-lg text-xs font-medium lowercase hover:bg-blue-soft transition-colors"
+            >
+              {t.results.tryAgain}
+            </button>
+            <button
+              onClick={onEditSearch}
+              className="px-4 py-2 border rounded-lg text-xs font-medium lowercase transition-colors"
+              style={{
+                borderColor: "var(--card-border)",
+                color: "var(--ink)",
+              }}
+            >
+              {t.results.editSearch}
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
+// ============================================================================
+// Main Results Content Component
+// ============================================================================
 
 function ResultsContent() {
   const searchParams = useSearchParams();
@@ -111,7 +236,6 @@ function ResultsContent() {
   const { t, locale } = useI18n();
   
   // Parse and normalize search state from URL
-  // Usar useMemo para estabilizar o objeto e evitar loop infinito
   const searchState = useMemo(() => {
     const urlState = parseSearchParams(searchParams);
     return normalizeSearchState(urlState);
@@ -134,90 +258,125 @@ function ResultsContent() {
   
   const [isLoading, setIsLoading] = useState(true);
   const [results, setResults] = useState<FlightResult[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [errorInfo, setErrorInfo] = useState<SearchErrorInfo | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>("best");
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  
+  // Rate limit retry countdown
+  const [retryCountdown, setRetryCountdown] = useState(0);
   
   // Estados para salvar busca
   const [isSaved, setIsSaved] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "removing">("idle");
 
-  // Usar searchKey como dependência única para evitar loop infinito
-  // searchState, forceEmpty e forceError são estáveis via useMemo/searchParams
+  // Countdown timer for rate limit
   useEffect(() => {
-    if (!from || !to) {
+    if (retryCountdown <= 0) return;
+    
+    const timer = setInterval(() => {
+      setRetryCountdown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [retryCountdown]);
+
+  // Perform search function
+  const performSearch = useCallback(async (abortSignal?: AbortSignal) => {
+    if (!from || !to || !depart) {
       setIsLoading(false);
       setResults([]);
-      setError(null);
+      setErrorInfo(null);
       return;
     }
 
-    const abortController = new AbortController();
+    setIsLoading(true);
+    setErrorInfo(null);
+    
+    try {
+      // Test flags: use mock directly
+      if (forceEmpty || forceError) {
+        const result = await mockSearch(searchState, {
+          forceEmpty,
+          forceError,
+          delay: Math.random() * 300 + 600,
+        });
+        
+        if (!abortSignal?.aborted) {
+          setResults(result.flights);
+          setErrorInfo(null);
+        }
+        return;
+      }
 
-    async function doSearch() {
-      setIsLoading(true);
-      setError(null);
+      // Real search via API
+      const result = await searchFlights(searchState, {
+        max: 20,
+        signal: abortSignal,
+      });
       
-      try {
-        // Flags de teste: usar mock diretamente
-        if (forceEmpty || forceError) {
-          const result = await mockSearch(searchState, {
-            forceEmpty,
-            forceError,
-            delay: Math.random() * 300 + 600,
+      if (abortSignal?.aborted) return;
+
+      if (result.error) {
+        // Rate limited - never use mock fallback
+        if (result.error.code === "RATE_LIMITED") {
+          const resetSec = result.error.details?.resetSec ?? 30;
+          setErrorInfo({
+            code: result.error.code,
+            message: result.error.message,
+            requestId: result.error.requestId,
+            resetSec,
           });
-          
-          if (!abortController.signal.aborted) {
-            setResults(result.flights);
-            setError(null);
-          }
+          setRetryCountdown(resetSec);
+          setResults([]);
           return;
         }
 
-        // Busca real via API
-        const result = await searchFlights(searchState, {
-          max: 20,
-          signal: abortController.signal,
+        // AMADEUS_DISABLED - use mock only if explicitly enabled in dev
+        if (result.error.code === "AMADEUS_DISABLED" && shouldUseMockFallback()) {
+          console.log("[Results] Amadeus disabled, using mock (dev mode)");
+          const mockResult = await mockSearch(searchState);
+          setResults(mockResult.flights);
+          setSessionId(null); // No session for mocks
+          setErrorInfo(null);
+          return;
+        }
+
+        // Other errors - show error state
+        setErrorInfo({
+          code: result.error.code,
+          message: result.error.message,
+          requestId: result.error.requestId,
         });
-        
-        if (!abortController.signal.aborted) {
-          if (result.error) {
-            // Se AMADEUS_DISABLED, usar mock como fallback
-            if (result.error.code === "AMADEUS_DISABLED") {
-              console.log("[Results] Amadeus disabled, using mock");
-              const mockResult = await mockSearch(searchState);
-              setResults(mockResult.flights);
-              setError(null);
-            } else {
-              setError(result.error.message);
-              setResults([]);
-            }
-          } else {
-            setResults(result.flights);
-            setError(null);
-          }
-        }
-      } catch (err) {
-        if (!abortController.signal.aborted) {
-          setError(err instanceof Error ? err.message : "Erro desconhecido");
-          setResults([]);
-        }
-      } finally {
-        if (!abortController.signal.aborted) {
-          setIsLoading(false);
-        }
+        setResults([]);
+        return;
+      }
+
+      // Success
+      setResults(result.flights);
+      setSessionId(result.sid || null);
+      setErrorInfo(null);
+    } catch (err) {
+      if (!abortSignal?.aborted) {
+        setErrorInfo({
+          code: "UNKNOWN_ERROR",
+          message: err instanceof Error ? err.message : "Erro desconhecido",
+        });
+        setResults([]);
+      }
+    } finally {
+      if (!abortSignal?.aborted) {
+        setIsLoading(false);
       }
     }
+  }, [from, to, depart, forceEmpty, forceError, searchState]);
 
-    doSearch();
-
-    return () => {
-      abortController.abort();
-    };
-    // searchKey já captura todas as mudanças relevantes (from, to, depart, returnDate, forceEmpty, forceError)
-    // searchState é memoizado e só muda quando searchParams muda, que é capturado por searchKey
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchKey]);
+  // Initial search effect
+  useEffect(() => {
+    const abortController = new AbortController();
+    performSearch(abortController.signal);
+    return () => abortController.abort();
+  }, [searchKey, performSearch]);
 
   // Ordenar resultados baseado no filtro
   const sortedResults = useMemo(() => {
@@ -250,13 +409,6 @@ function ResultsContent() {
     }
   }, [searchState]);
 
-  // Verificar se busca está salva
-  useEffect(() => {
-    if (typeof window !== "undefined" && searchState.from && searchState.to) {
-      setIsSaved(isSearchSaved(searchState));
-    }
-  }, [searchState]);
-
   // Use normalized state for SearchModal
   const initialSearchState: Partial<SearchState> = searchState;
 
@@ -277,10 +429,22 @@ function ResultsContent() {
   }
 
   function handleFlightClick(flight: FlightResult) {
-    // Preservar query params ao navegar para detalhes
-    const currentParams = searchParams.toString();
-    const url = currentParams 
-      ? `/voos/${flight.id}?${currentParams}`
+    // Build URL with sid as primary identifier
+    const urlParams = new URLSearchParams();
+    
+    // Add sid first (primary lookup)
+    if (sessionId) {
+      urlParams.set("sid", sessionId);
+    }
+    
+    // Add search params as fallback
+    if (from) urlParams.set("from", from);
+    if (to) urlParams.set("to", to);
+    if (depart) urlParams.set("depart", depart);
+    if (returnDate) urlParams.set("return", returnDate);
+    
+    const url = urlParams.toString()
+      ? `/voos/${flight.id}?${urlParams.toString()}`
       : `/voos/${flight.id}`;
     router.push(url);
   }
@@ -322,49 +486,17 @@ function ResultsContent() {
     }
   }
 
-  async function handleRetry() {
-    if (!searchState.from || !searchState.to) return;
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // Flags de teste: usar mock
-      if (forceEmpty || forceError) {
-        const result = await mockSearch(searchState, {
-          forceEmpty,
-          forceError,
-          delay: Math.random() * 300 + 600,
-        });
-        setResults(result.flights);
-        setError(null);
-        return;
-      }
-
-      // Busca real via API
-      const result = await searchFlights(searchState, { max: 20 });
-      
-      if (result.error) {
-        // Fallback para mock se Amadeus desabilitado
-        if (result.error.code === "AMADEUS_DISABLED") {
-          const mockResult = await mockSearch(searchState);
-          setResults(mockResult.flights);
-          setError(null);
-        } else {
-          setError(result.error.message);
-          setResults([]);
-        }
-      } else {
-        setResults(result.flights);
-        setError(null);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido");
-      setResults([]);
-    } finally {
-      setIsLoading(false);
-    }
+  function handleRetry() {
+    if (retryCountdown > 0) return;
+    performSearch();
   }
+
+  function handleEditSearch() {
+    setShowEditModal(true);
+  }
+
+  // Determine error type for rendering
+  const isRateLimited = errorInfo?.code === "RATE_LIMITED";
 
   return (
     <>
@@ -398,7 +530,7 @@ function ResultsContent() {
 
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => setShowEditModal(true)}
+                    onClick={handleEditSearch}
                     className="text-sm text-blue hover:text-blue-soft transition-colors lowercase"
                   >
                     {t.results.edit}
@@ -494,7 +626,7 @@ function ResultsContent() {
             <p className="text-ink-muted text-sm mt-1">
               {isLoading 
                 ? t.results.searching
-                : error
+                : errorInfo
                   ? t.results.errorTitle
                   : sortedResults.length === 0
                     ? t.results.noResults
@@ -504,7 +636,7 @@ function ResultsContent() {
           </div>
 
           {/* Filtros */}
-          {!isLoading && !error && sortedResults.length > 0 && (
+          {!isLoading && !errorInfo && sortedResults.length > 0 && (
             <div className="mb-6">
               <ResultsFilters 
                 activeFilter={activeFilter}
@@ -516,13 +648,24 @@ function ResultsContent() {
           {/* Estados */}
           {isLoading ? (
             <LoadingSkeleton />
-          ) : error ? (
-            <ErrorState onRetry={handleRetry} />
+          ) : isRateLimited && errorInfo ? (
+            <RateLimitState 
+              error={errorInfo}
+              onRetry={handleRetry}
+              onEditSearch={handleEditSearch}
+              retryCountdown={retryCountdown}
+            />
+          ) : errorInfo ? (
+            <ErrorState 
+              error={errorInfo}
+              onRetry={handleRetry} 
+              onEditSearch={handleEditSearch}
+            />
           ) : sortedResults.length === 0 ? (
-            <EmptyState onEditSearch={() => setShowEditModal(true)} />
+            <EmptyState onEditSearch={handleEditSearch} />
           ) : (
             <div className="space-y-3">
-              {sortedResults.map((flight, index) => {
+              {sortedResults.map((flight) => {
                 // Verificar se este voo é a melhor oferta (comparando por ID)
                 const isBestOffer = bestOfferFlightId === flight.id;
                 const bestOfferInfo = isBestOffer 
@@ -545,7 +688,6 @@ function ResultsContent() {
                       onClick={() => handleFlightClick(flight)}
                       isBestOffer={isBestOffer}
                       bestOfferInfo={bestOfferInfo}
-                      searchState={searchState}
                     />
                   </div>
                 );
@@ -568,6 +710,10 @@ function ResultsContent() {
     </>
   );
 }
+
+// ============================================================================
+// Page Export
+// ============================================================================
 
 export default function ResultadosPage() {
   return (

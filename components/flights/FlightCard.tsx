@@ -5,8 +5,6 @@ import type { FlightResult } from "@/lib/search/types";
 import { useI18n } from "@/lib/i18n";
 import { useState } from "react";
 import { PriceInsightBadge } from "@/components/price/PriceInsightBadge";
-import { getPriceInsight } from "@/lib/mocks/priceInsight";
-import type { SearchState } from "@/lib/types/search";
 import { AirlineLogo } from "./AirlineLogo";
 
 interface FlightCardProps {
@@ -17,16 +15,16 @@ interface FlightCardProps {
     explanation: string;
     priceDifference: number;
   } | null;
-  searchState?: SearchState;
 }
 
-export function FlightCard({ flight, onClick, isBestOffer = false, bestOfferInfo = null, searchState }: FlightCardProps) {
-  const { t, locale } = useI18n();
+export function FlightCard({ flight, onClick, isBestOffer = false, bestOfferInfo = null }: FlightCardProps) {
+  const { t } = useI18n();
   const isDirect = flight.stops === "direto" || flight.stops === "direct";
   const [showTooltip, setShowTooltip] = useState(false);
   
-  // Calcular price insight se searchState estiver disponível
-  const priceInsight = searchState ? getPriceInsight(searchState, flight.price) : null;
+  // Price insight comes from the API response (based on real historical data)
+  // If no historical data exists, priceInsight will be undefined
+  const priceInsight = flight.priceInsight;
   
   return (
     <div

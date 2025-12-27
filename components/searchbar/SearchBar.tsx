@@ -9,7 +9,7 @@ import { PaxClassPopover } from "./PaxClassPopover";
 import { useI18n } from "@/lib/i18n";
 import type { SearchState, TripType, Pax, CabinClass } from "@/lib/types/search";
 import { defaultSearchState } from "@/lib/types/search";
-import type { Airport } from "@/lib/mocks/airports";
+import type { Airport } from "@/lib/airports";
 import { normalizeSearchState, serializeSearchState } from "@/lib/utils/searchParams";
 
 function formatPaxSummary(pax: Pax, cabin: CabinClass, t: ReturnType<typeof useI18n>["t"]): string {

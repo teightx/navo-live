@@ -1,6 +1,6 @@
 import type { SearchState, TripType, CabinClass } from "@/lib/types/search";
 import { defaultSearchState } from "@/lib/types/search";
-import { getAirportByCode } from "@/lib/mocks/airports";
+import { getAirportByCode } from "@/lib/airports";
 
 // Type guard for ReadonlyURLSearchParams
 function isReadonlyURLSearchParams(

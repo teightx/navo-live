@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Airport } from "@/lib/mocks/airports";
+import { Airport } from "@/lib/airports";
 import { AutocompleteField } from "./AutocompleteField";
 import { DateField } from "./DateField";
 

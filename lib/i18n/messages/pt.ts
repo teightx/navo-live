@@ -69,6 +69,11 @@ export interface Messages {
     searchSaved: string;
     removeSearch: string;
     saving: string;
+    // Rate limit error
+    rateLimitTitle: string;
+    rateLimitMessage: string;
+    rateLimitRetry: string;
+    requestCode: string;
   };
   flightDetails: {
     departure: string;
@@ -82,6 +87,22 @@ export interface Messages {
     pricesSubjectToChange: string;
     back: string;
     flightNotFound: string;
+    contextMissingTitle: string;
+    contextMissingMessage: string;
+    backToResults: string;
+    newSearch: string;
+    whereToBook: string;
+    officialSite: string;
+    goToSite: string;
+    comingSoon: string;
+    goToAirline: string;
+    partnersComingSoon: string;
+    partnersDisclaimer: string;
+    flightPriceLabel: string;
+    errorTitle: string;
+    errorMessage: string;
+    tryAgain: string;
+    flightExpired: string;
   };
   footer: {
     disclaimer: string;
@@ -184,6 +205,11 @@ export const pt: Messages = {
     searchSaved: "busca salva",
     removeSearch: "remover busca",
     saving: "salvando...",
+    // Rate limit error
+    rateLimitTitle: "muitas buscas",
+    rateLimitMessage: "você fez muitas buscas em pouco tempo. aguarde alguns segundos e tente novamente.",
+    rateLimitRetry: "tentar novamente em {seconds}s",
+    requestCode: "código: {code}",
   },
   flightDetails: {
     departure: "partida",
@@ -197,6 +223,22 @@ export const pt: Messages = {
     pricesSubjectToChange: "preços sujeitos a alteração · verifique no site do parceiro",
     back: "voltar",
     flightNotFound: "voo não encontrado",
+    contextMissingTitle: "contexto da busca não encontrado",
+    contextMissingMessage: "não conseguimos recuperar os detalhes deste voo. por favor, volte para os resultados ou faça uma nova busca.",
+    backToResults: "voltar para resultados",
+    newSearch: "nova busca",
+    whereToBook: "onde comprar",
+    officialSite: "site oficial",
+    goToSite: "ir para site",
+    comingSoon: "em breve",
+    goToAirline: "ir para site",
+    partnersComingSoon: "comparação de preços em parceiros será adicionada em breve.",
+    partnersDisclaimer: "redirecionamos para parceiros. preços podem variar.",
+    flightPriceLabel: "preço deste voo",
+    errorTitle: "erro ao carregar",
+    errorMessage: "não foi possível carregar os detalhes do voo.",
+    tryAgain: "tentar novamente",
+    flightExpired: "a oferta pode ter expirado. faça uma nova busca.",
   },
   footer: {
     disclaimer: "Preços estimados. Redirecionamos para parceiros.",
